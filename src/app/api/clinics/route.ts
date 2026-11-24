@@ -89,6 +89,21 @@ export async function GET(request: Request) {
     const [clinics, settings] = await Promise.all([
       prisma.clinic.findMany({
         where,
+        include: {
+          contracts: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: {
+              id: true,
+              token: true,
+              status: true,
+              signedAt: true,
+              startDate: true,
+              endDate: true,
+              documentHash: true,
+            },
+          },
+        },
         orderBy: [{ createdAt: "desc" }],
       }),
       getOrCreateSettings(),
@@ -151,6 +166,7 @@ export async function POST(request: Request) {
         activeDoctors: data.activeDoctors,
         planTier: data.planTier ?? official.tier,
         isFounder: data.isFounder,
+        setupFee: Number((data.setupFeeCents / 100).toFixed(2)),
         setupFeeCents: data.setupFeeCents,
         setupInstallments: data.setupInstallments ?? null,
         monthlyFeeCents: data.monthlyFeeCents,

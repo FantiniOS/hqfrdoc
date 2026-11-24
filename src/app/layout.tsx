@@ -15,8 +15,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FRdoc HQ — Painel Master Administrativo",
-  description: "Painel privado de gestão financeira, clínicas e infraestrutura da FRdoc.",
+  title: "FRdoc HQ — Painel Administrativo",
+  description: "Painel executivo privado de gestão financeira, clínicas e contratos FRdoc.",
   robots: {
     index: false,
     follow: false,
@@ -37,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-slate-50 text-slate-900 selection:bg-emerald-100 selection:text-emerald-900">
+      <body className="min-h-screen bg-[#F8FAFC] text-[#0F172A] selection:bg-emerald-100 selection:text-emerald-900">
         {children}
       </body>
     </html>

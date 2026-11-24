@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth-server";
-import {
-  buildDueDateForCompetence,
-  getShortCompetenceLabel,
-  isValidCompetence,
-} from "@/lib/format";
-import { prisma } from "@/lib/prisma";
+import { ensureMonthlyInvoicesForCompetence } from "@/lib/billing-automation";
+import { getShortCompetenceLabel, isValidCompetence } from "@/lib/format";
 
 const generateSchema = z.object({
   competence: z
@@ -29,61 +25,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const { competence } = parsed.data;
-    const activeClinics = await prisma.clinic.findMany({
-      where: { status: "ACTIVE" },
-      select: {
-        id: true,
-        monthlyFeeCents: true,
-        dueDay: true,
-      },
-    });
-
-    if (activeClinics.length === 0) {
-      return NextResponse.json({
-        competence,
-        totalActiveClinics: 0,
-        createdCount: 0,
-        skippedCount: 0,
-        message: "Nenhuma clínica com status Ativa encontrada para faturar.",
-      });
-    }
-
-    const compLabel = getShortCompetenceLabel(competence);
-
-    // Idempotente via chave única @@unique([clinicId, competence, type])
-    const result = await prisma.invoice.createMany({
-      data: activeClinics.map((clinic) => ({
-        clinicId: clinic.id,
-        type: "MONTHLY" as const,
-        competence,
-        description: `Mensalidade — ${compLabel}`,
-        amountCents: clinic.monthlyFeeCents,
-        dueDate: buildDueDateForCompetence(competence, clinic.dueDay),
-        status: "OPEN" as const,
-      })),
-      skipDuplicates: true,
-    });
-
-    const createdCount = result.count;
-    const skippedCount = activeClinics.length - createdCount;
+    const result = await ensureMonthlyInvoicesForCompetence(parsed.data.competence);
+    const compLabel = getShortCompetenceLabel(result.competence);
 
     return NextResponse.json({
-      competence,
-      totalActiveClinics: activeClinics.length,
-      createdCount,
-      skippedCount,
+      ...result,
       message:
-        createdCount > 0
-          ? `${createdCount} mensalidade(s) gerada(s) com sucesso${
-              skippedCount > 0 ? ` (${skippedCount} já existente(s) preservada(s))` : ""
-            }.`
-          : `Todas as ${activeClinics.length} clínicas ativas já possuem mensalidade lançada em ${compLabel}.`,
+        result.totalActiveClinics === 0
+          ? "Nenhuma clínica ativa encontrada para faturar."
+          : result.createdCount > 0
+            ? `${result.createdCount} mensalidade(s) gerada(s) em ${compLabel}.`
+            : `Todas as ${result.totalActiveClinics} clínicas ativas já estão faturadas em ${compLabel}.`,
     });
   } catch (err) {
     console.error("[api/invoices/generate-monthly] Erro:", err);
     return NextResponse.json(
-      { error: "Erro ao gerar mensalidades do mês." },
+      { error: "Erro ao sincronizar mensalidades." },
       { status: 500 }
     );
   }

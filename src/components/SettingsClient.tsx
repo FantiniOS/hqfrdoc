@@ -4,18 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import type { BillingCycle } from "@prisma/client";
 import {
   CheckCircle2,
-  FileText,
   Loader2,
   Pencil,
-  Percent,
   Plus,
-  QrCode,
   Save,
-  Sparkles,
   Trash2,
-  Wallet,
-  X,
 } from "lucide-react";
+import { SlideOverDrawer } from "@/components/SlideOverDrawer";
 import {
   centsToReaisString,
   formatBRL,
@@ -90,7 +85,7 @@ export function SettingsClient() {
     text: string;
   } | null>(null);
 
-  const [costModalOpen, setCostModalOpen] = useState(false);
+  const [costDrawerOpen, setCostDrawerOpen] = useState(false);
   const [editingCost, setEditingCost] = useState<FixedCostRow | null>(null);
   const [costName, setCostName] = useState("");
   const [costCategory, setCostCategory] = useState("Infraestrutura");
@@ -143,7 +138,7 @@ export function SettingsClient() {
     } catch {
       setFeedback({
         type: "error",
-        text: "Erro ao carregar custos fixos e configurações.",
+        text: "Erro ao carregar configurações.",
       });
     } finally {
       setLoading(false);
@@ -154,24 +149,24 @@ export function SettingsClient() {
     void loadAll();
   }, [loadAll]);
 
-  function openNewCostModal() {
+  function openNewCostDrawer() {
     setEditingCost(null);
     setCostName("");
     setCostCategory("Infraestrutura");
     setCostAmountInput("");
     setCostCycle("MONTHLY");
     setCostNotes("");
-    setCostModalOpen(true);
+    setCostDrawerOpen(true);
   }
 
-  function openEditCostModal(cost: FixedCostRow) {
+  function openEditCostDrawer(cost: FixedCostRow) {
     setEditingCost(cost);
     setCostName(cost.name);
     setCostCategory(cost.category);
     setCostAmountInput(centsToReaisString(cost.monthlyAmountCents));
     setCostCycle(cost.billingCycle);
     setCostNotes(cost.notes ?? "");
-    setCostModalOpen(true);
+    setCostDrawerOpen(true);
   }
 
   async function handleSaveCost(e: React.FormEvent) {
@@ -201,10 +196,10 @@ export function SettingsClient() {
       if (!res.ok) {
         setFeedback({ type: "error", text: data.error ?? "Erro ao salvar custo." });
       } else {
-        setCostModalOpen(false);
+        setCostDrawerOpen(false);
         setFeedback({
           type: "success",
-          text: editingCost ? "Custo fixo atualizado." : "Custo fixo cadastrado.",
+          text: editingCost ? "Custo atualizado." : "Custo fixo adicionado.",
         });
         await loadAll();
       }
@@ -225,10 +220,9 @@ export function SettingsClient() {
   }
 
   async function handleDeleteCost(cost: FixedCostRow) {
-    if (!window.confirm(`Remover o custo fixo "${cost.name}"?`)) return;
+    if (!window.confirm(`Remover "${cost.name}"?`)) return;
     const res = await fetch(`/api/fixed-costs/${cost.id}`, { method: "DELETE" });
     if (res.ok) {
-      setFeedback({ type: "success", text: "Custo fixo removido." });
       await loadAll();
     }
   }
@@ -239,13 +233,8 @@ export function SettingsClient() {
     try {
       const res = await fetch("/api/fixed-costs/seed", { method: "POST" });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setFeedback({ type: "error", text: data.error ?? "Erro ao aplicar seed." });
-      } else {
-        setFeedback({
-          type: "success",
-          text: data.message ?? "Custos padrão carregados.",
-        });
+      if (res.ok) {
+        setFeedback({ type: "success", text: data.message ?? "Custos carregados." });
         await loadAll();
       }
     } finally {
@@ -290,68 +279,43 @@ export function SettingsClient() {
         });
       } else {
         setSettings((prev) => ({ ...prev, taxRatePercent: safeRate }));
-        setFeedback({
-          type: "success",
-          text: successMessage,
-        });
+        setFeedback({ type: "success", text: successMessage });
       }
     } catch {
-      setFeedback({
-        type: "error",
-        text: "Falha de comunicação ao salvar configurações.",
-      });
+      setFeedback({ type: "error", text: "Falha de comunicação." });
     } finally {
       if (section === "fiscal") setSavingSettings(false);
       else setSavingContract(false);
     }
   }
 
-  async function handleSaveSettings(e: React.FormEvent) {
-    e.preventDefault();
-    await persistAllSettings(
-      "fiscal",
-      "Configurações fiscais e Chave PIX salvas com sucesso."
-    );
-  }
-
-  async function handleSaveContractSettings(e: React.FormEvent) {
-    e.preventDefault();
-    await persistAllSettings(
-      "contract",
-      "Dados da Contratada e regras contratuais salvos com sucesso."
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Cabeçalho */}
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">
-          Custos Fixos & Configurações da FRdoc
+        <h1 className="text-lg font-semibold tracking-tight text-[#0F172A]">
+          Configurações
         </h1>
-        <p className="mt-0.5 text-sm text-slate-600">
-          Despesas fixas da operação, alíquota tributária, Chave PIX e parâmetros oficiais de contratos.
+        <p className="text-xs text-[#64748B]">
+          Custos fixos da operação, tributação, chave PIX EMV oficial e dados jurídicos da Contratada.
         </p>
       </div>
 
       {feedback && (
         <div
-          className={`flex items-center justify-between rounded-xl border px-4 py-2.5 text-xs font-medium ${
+          className={`flex items-center justify-between rounded-lg border px-4 py-2.5 text-xs ${
             feedback.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-rose-200 bg-rose-50 text-rose-800"
+              ? "border-emerald-200 bg-emerald-50/70 text-[#059669]"
+              : "border-rose-200 bg-rose-50 text-rose-700"
           }`}
         >
           <span className="flex items-center gap-2">
-            {feedback.type === "success" && (
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            )}
+            {feedback.type === "success" && <CheckCircle2 className="h-3.5 w-3.5" />}
             {feedback.text}
           </span>
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="ml-4 text-[11px] font-semibold opacity-75 hover:opacity-100"
+            className="ml-4 text-[11px] font-medium opacity-75 hover:opacity-100"
           >
             Fechar
           </button>
@@ -359,113 +323,87 @@ export function SettingsClient() {
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Coluna Esquerda (7 cols): Custos Fixos */}
-        <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs lg:col-span-7">
-          <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-600">
-                <Wallet className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">
-                  Custos Fixos da Plataforma
-                </h2>
-                <p className="text-xs text-slate-600">
-                  Total mensal ativo:{" "}
-                  <strong className="font-mono-num text-amber-700">
-                    {formatBRL(totalFixedCents)}/mês
-                  </strong>
-                </p>
-              </div>
+        {/* Custos Fixos */}
+        <section className="rounded-xl border border-[#E2E8F0] bg-white p-5 lg:col-span-7">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E2E8F0] pb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-[#0F172A]">
+                Custos Fixos Mensais
+              </h2>
+              <p className="text-xs text-[#64748B]">
+                Total ativo:{" "}
+                <strong className="font-mono-num text-[#0F172A]">
+                  {formatBRL(totalFixedCents)}/mês
+                </strong>
+              </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => void handleSeedDefaults()}
                 disabled={seeding}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
+                className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-medium text-[#0F172A] transition hover:bg-slate-50 disabled:opacity-50"
               >
-                {seeding ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
-                )}
-                Seed Inicial FRdoc
+                {seeding ? "Carregando..." : "Padrões FRdoc"}
               </button>
-
               <button
                 type="button"
-                onClick={openNewCostModal}
-                className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700"
+                onClick={openNewCostDrawer}
+                className="inline-flex items-center gap-1 rounded-lg bg-[#059669] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Novo Custo
+                Adicionar
               </button>
             </div>
           </div>
 
           {loading ? (
-            <div className="flex h-40 items-center justify-center text-xs text-slate-500">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Carregando custos fixos...
+            <div className="flex h-36 items-center justify-center text-xs text-[#64748B]">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#059669]" />
+              Carregando...
             </div>
           ) : fixedCosts.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-10 text-center">
-              <p className="text-sm font-semibold text-slate-800">
-                Nenhum custo fixo cadastrado ainda
-              </p>
-              <p className="mx-auto mt-1 max-w-md text-xs text-slate-600">
-                Use o botão <strong>Seed Inicial FRdoc</strong> para carregar Vercel Pro (R$ 120,00), Apple Developer (R$ 49,50) e Domínio frdoc.com.br (R$ 3,33) — totalmente editáveis.
-              </p>
+            <div className="py-10 text-center text-xs text-[#64748B]">
+              Nenhum custo fixo cadastrado. Clique em &ldquo;Padrões FRdoc&rdquo; para
+              inserir os custos iniciais sugeridos.
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="divide-y divide-[#E2E8F0]">
               {fixedCosts.map((cost) => (
                 <div
                   key={cost.id}
-                  className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition ${
-                    cost.active
-                      ? "border-slate-200 bg-slate-50/70"
-                      : "border-slate-200/70 bg-slate-50/40 opacity-60"
+                  className={`flex items-center justify-between gap-3 py-3 ${
+                    cost.active ? "" : "opacity-50"
                   }`}
                 >
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-slate-900">
-                        {cost.name}
-                      </p>
-                      <span className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
-                        {cost.category}
-                      </span>
-                      <span className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] text-slate-500">
-                        {cost.billingCycle === "ANNUAL"
-                          ? "Equiv. Mensal (Anual)"
-                          : "Mensal"}
-                      </span>
-                    </div>
-                    {cost.notes && (
-                      <p className="mt-0.5 truncate text-xs text-slate-500">
-                        {cost.notes}
-                      </p>
-                    )}
+                    <p className="text-xs font-semibold text-[#0F172A]">
+                      {cost.name}
+                    </p>
+                    <p className="text-[11px] text-[#64748B]">
+                      {cost.category} ·{" "}
+                      {cost.billingCycle === "ANNUAL"
+                        ? "Rateio anual"
+                        : "Mensal"}
+                    </p>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2.5">
-                    <span className="font-mono-num text-sm font-semibold text-amber-700">
+                    <span className="font-mono-num text-xs font-semibold text-[#0F172A]">
                       {formatBRL(cost.monthlyAmountCents)}
                     </span>
 
                     <button
                       type="button"
                       onClick={() => void handleToggleCost(cost)}
-                      title={cost.active ? "Desativar custo" : "Ativar custo"}
-                      className={`h-5 w-9 rounded-full p-0.5 transition ${
-                        cost.active ? "bg-emerald-600" : "bg-slate-300"
+                      title={cost.active ? "Desativar" : "Ativar"}
+                      className={`h-4 w-8 rounded-full p-0.5 transition ${
+                        cost.active ? "bg-[#059669]" : "bg-slate-300"
                       }`}
                     >
                       <span
-                        className={`block h-4 w-4 rounded-full bg-white shadow-2xs transition-transform ${
+                        className={`block h-3 w-3 rounded-full bg-white transition-transform ${
                           cost.active ? "translate-x-4" : "translate-x-0"
                         }`}
                       />
@@ -473,9 +411,9 @@ export function SettingsClient() {
 
                     <button
                       type="button"
-                      onClick={() => openEditCostModal(cost)}
+                      onClick={() => openEditCostDrawer(cost)}
                       aria-label={`Editar ${cost.name}`}
-                      className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-slate-300 hover:text-slate-900"
+                      className="rounded p-1 text-[#64748B] hover:bg-slate-100 hover:text-[#0F172A]"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -484,7 +422,7 @@ export function SettingsClient() {
                       type="button"
                       onClick={() => void handleDeleteCost(cost)}
                       aria-label={`Remover ${cost.name}`}
-                      className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                      className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -495,24 +433,22 @@ export function SettingsClient() {
           )}
         </section>
 
-        {/* Coluna Direita (5 cols): Impostos & Chave PIX */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs lg:col-span-5">
-          <form onSubmit={handleSaveSettings} className="space-y-5">
-            {/* Bloco Fiscal */}
+        {/* Tributação e Chave PIX EMV */}
+        <section className="rounded-xl border border-[#E2E8F0] bg-white p-5 lg:col-span-5">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void persistAllSettings(
+                "fiscal",
+                "Alíquota e Chave PIX EMV salvas com sucesso."
+              );
+            }}
+            className="space-y-5"
+          >
             <div className="space-y-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-600">
-                  <Percent className="h-4 w-4" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-slate-900">
-                    Alíquota de Imposto Padrão
-                  </h2>
-                  <p className="text-xs text-slate-600">
-                    Aplicada sobre o faturamento recebido no mês
-                  </p>
-                </div>
-              </div>
+              <h2 className="text-sm font-semibold text-[#0F172A]">
+                Imposto & Chave PIX Oficial (EMV)
+              </h2>
 
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -520,35 +456,32 @@ export function SettingsClient() {
                   onClick={() =>
                     applyTaxShortcut(6.0, "Simples Nacional — Anexo III")
                   }
-                  className={`rounded-xl border px-3 py-2 text-left transition ${
+                  className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
                     Math.abs(settings.taxRatePercent - 6.0) < 0.01
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                      : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50"
+                      ? "border-[#059669] bg-emerald-50/60 text-[#059669]"
+                      : "border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-slate-50"
                   }`}
                 >
-                  <p className="font-mono-num text-sm font-semibold">6%</p>
-                  <p className="text-[11px] text-slate-600">Simples Anexo III</p>
+                  <span className="font-mono-num font-semibold">6%</span> · Anexo III
                 </button>
-
                 <button
                   type="button"
                   onClick={() =>
                     applyTaxShortcut(15.5, "Simples Nacional — Anexo V")
                   }
-                  className={`rounded-xl border px-3 py-2 text-left transition ${
+                  className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
                     Math.abs(settings.taxRatePercent - 15.5) < 0.01
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                      : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50"
+                      ? "border-[#059669] bg-emerald-50/60 text-[#059669]"
+                      : "border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-slate-50"
                   }`}
                 >
-                  <p className="font-mono-num text-sm font-semibold">15,5%</p>
-                  <p className="text-[11px] text-slate-600">Simples Anexo V</p>
+                  <span className="font-mono-num font-semibold">15,5%</span> · Anexo V
                 </button>
               </div>
 
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                  <label className="mb-1 block text-xs font-medium text-[#0F172A]">
                     Alíquota (%)
                   </label>
                   <input
@@ -562,13 +495,12 @@ export function SettingsClient() {
                         setSettings((prev) => ({ ...prev, taxRatePercent: num }));
                       }
                     }}
-                    placeholder="6,0"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 font-mono-num text-xs text-[#0F172A] outline-none focus:border-[#059669]"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Regime Fiscal
+                  <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                    Regime
                   </label>
                   <input
                     type="text"
@@ -580,39 +512,24 @@ export function SettingsClient() {
                         taxRegimeLabel: e.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Bloco PIX Oficial */}
-            <div className="space-y-3 border-t border-slate-200 pt-5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600">
-                  <QrCode className="h-4 w-4" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-slate-900">
-                    Chave PIX Oficial da FRdoc
-                  </h2>
-                  <p className="text-xs text-slate-600">
-                    Inserida automaticamente nas cobranças por WhatsApp
-                  </p>
-                </div>
-              </div>
-
+            <div className="space-y-3 border-t border-[#E2E8F0] pt-4">
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Tipo
+                  <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                    Tipo PIX
                   </label>
                   <select
                     value={settings.pixKeyType}
                     onChange={(e) =>
                       setSettings((prev) => ({ ...prev, pixKeyType: e.target.value }))
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-2.5 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
                   >
                     {PIX_KEY_TYPES.map((t) => (
                       <option key={t} value={t}>
@@ -623,8 +540,8 @@ export function SettingsClient() {
                 </div>
 
                 <div className="col-span-2">
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Chave PIX
+                  <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                    Chave PIX (usada no QR Code)
                   </label>
                   <input
                     type="text"
@@ -632,15 +549,15 @@ export function SettingsClient() {
                     onChange={(e) =>
                       setSettings((prev) => ({ ...prev, pixKey: e.target.value }))
                     }
-                    placeholder="00.000.000/0001-00 ou financeiro@frdoc.com.br"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    placeholder="CNPJ, e-mail, celular ou EVP"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 font-mono-num text-xs text-[#0F172A] outline-none focus:border-[#059669]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                  <label className="mb-1 block text-xs font-medium text-[#0F172A]">
                     Titular do PIX
                   </label>
                   <input
@@ -652,13 +569,12 @@ export function SettingsClient() {
                         pixHolderName: e.target.value,
                       }))
                     }
-                    placeholder="FRdoc Tecnologia Ltda"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Nome da Marca
+                  <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                    Marca ({formatPercent(settings.taxRatePercent)})
                   </label>
                   <input
                     type="text"
@@ -669,72 +585,54 @@ export function SettingsClient() {
                         companyName: e.target.value,
                       }))
                     }
-                    placeholder="FRdoc"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
                   />
                 </div>
-              </div>
-
-              {/* Pré-visualização discreta */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
-                <p className="text-[11px] font-semibold text-slate-600">
-                  Resumo ativo no painel:
-                </p>
-                <p className="mt-1 text-slate-700">
-                  Imposto:{" "}
-                  <strong className="font-mono-num text-slate-900">
-                    {formatPercent(settings.taxRatePercent)}
-                  </strong>{" "}
-                  ({settings.taxRegimeLabel})
-                </p>
-                <p className="mt-0.5 text-slate-700">
-                  PIX ({settings.pixKeyType}):{" "}
-                  <strong className="font-mono-num text-emerald-700">
-                    {settings.pixKey || "Ainda não informado"}
-                  </strong>
-                  {settings.pixHolderName ? ` · ${settings.pixHolderName}` : ""}
-                </p>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={savingSettings}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-emerald-700 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#059669] px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
             >
               {savingSettings ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Save className="h-4 w-4" />
+                <Save className="h-3.5 w-3.5" />
               )}
-              Salvar Configurações Fiscais e PIX
+              Salvar Imposto e PIX
             </button>
           </form>
         </section>
       </div>
 
-      {/* Seção: Dados da Contratada & Regras de Contrato */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-        <form onSubmit={handleSaveContractSettings} className="space-y-5">
-          <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600">
-                <FileText className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">
-                  Dados da Contratada & Regras de Contrato
-                </h2>
-                <p className="text-xs text-slate-600">
-                  Preenchidos automaticamente na geração dos contratos SaaS FRdoc 2.0 e anexos (LGPD).
-                </p>
-              </div>
+      {/* Dados da Contratada & Regras de Contrato */}
+      <section className="rounded-xl border border-[#E2E8F0] bg-white p-5">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void persistAllSettings(
+              "contract",
+              "Dados da Contratada e regras de contrato atualizados."
+            );
+          }}
+          className="space-y-5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E2E8F0] pb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-[#0F172A]">
+                Dados da Contratada & Regras de Contrato
+              </h2>
+              <p className="text-xs text-[#64748B]">
+                Utilizados na geração automática de contratos SaaS e certificado PDF.
+              </p>
             </div>
 
             <button
               type="submit"
               disabled={savingContract}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#059669] px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
             >
               {savingContract ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -746,342 +644,313 @@ export function SettingsClient() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Bloco Esquerdo: Qualificação da Contratada */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-                Qualificação da Contratada (FRdoc)
-              </h3>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Razão Social da Contratada
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.companyLegalName}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        companyLegalName: e.target.value,
-                      }))
-                    }
-                    placeholder="Ex.: FRdoc Tecnologia e Sistemas Médicos Ltda"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  Razão Social da Contratada
+                </label>
+                <input
+                  type="text"
+                  value={settings.companyLegalName}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      companyLegalName: e.target.value,
+                    }))
+                  }
+                  placeholder="FRdoc Tecnologia Médica Ltda"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    CNPJ da Contratada
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.companyCnpj}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        companyCnpj: e.target.value,
-                      }))
-                    }
-                    placeholder="00.000.000/0001-00"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  CNPJ da Contratada
+                </label>
+                <input
+                  type="text"
+                  value={settings.companyCnpj}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      companyCnpj: e.target.value,
+                    }))
+                  }
+                  placeholder="00.000.000/0001-00"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 font-mono-num text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Foro do Contrato
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={settings.contractCourt}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        contractCourt: e.target.value,
-                      }))
-                    }
-                    placeholder="Contagem/MG"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  Foro Contratual
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={settings.contractCourt}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      contractCourt: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
+              </div>
 
-                <div className="sm:col-span-2">
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Endereço Completo da Sede
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.companyAddress}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        companyAddress: e.target.value,
-                      }))
-                    }
-                    placeholder="Rua, nº, complemento, bairro, cidade/UF, CEP"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  Endereço Completo da Sede
+                </label>
+                <input
+                  type="text"
+                  value={settings.companyAddress}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      companyAddress: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Representante Legal
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.companyRepName}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        companyRepName: e.target.value,
-                      }))
-                    }
-                    placeholder="Nome completo do sócio administrador"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  Representante Legal
+                </label>
+                <input
+                  type="text"
+                  value={settings.companyRepName}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      companyRepName: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    CPF do Representante
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.companyRepCpf}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        companyRepCpf: e.target.value,
-                      }))
-                    }
-                    placeholder="000.000.000-00"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  CPF do Representante
+                </label>
+                <input
+                  type="text"
+                  value={settings.companyRepCpf}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      companyRepCpf: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 font-mono-num text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
               </div>
             </div>
 
-            {/* Bloco Direito: Parâmetros Comerciais & Suporte */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
-                Padrões de Fidelidade, Inadimplência e Suporte
-              </h3>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Fidelidade Padrão (meses)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={60}
-                    required
-                    value={settings.defaultFidelityMonths}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        defaultFidelityMonths: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  Fidelidade (meses)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={60}
+                  required
+                  value={settings.defaultFidelityMonths}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      defaultFidelityMonths: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 font-mono-num text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Multa Rescisória (%)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    required
-                    value={settings.defaultFidelityPenaltyPct}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        defaultFidelityPenaltyPct: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  Multa Fidelidade (%)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  required
+                  value={settings.defaultFidelityPenaltyPct}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      defaultFidelityPenaltyPct: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 font-mono-num text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Suspensão (dias atraso)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={90}
-                    required
-                    value={settings.defaultSuspensionDays}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        defaultSuspensionDays: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  Suspensão (dias)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={90}
+                  required
+                  value={settings.defaultSuspensionDays}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      defaultSuspensionDays: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 font-mono-num text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
+              </div>
 
-                <div className="sm:col-span-3">
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Canal Oficial de Suporte Técnico
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={settings.supportChannel}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        supportChannel: e.target.value,
-                      }))
-                    }
-                    placeholder="WhatsApp"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div className="sm:col-span-3">
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  Canal de Suporte
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={settings.supportChannel}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      supportChannel: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
+              </div>
 
-                <div className="sm:col-span-3">
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Horário de Atendimento do Suporte
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={settings.supportHours}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        supportHours: e.target.value,
-                      }))
-                    }
-                    placeholder="Segunda a sexta, das 08h às 18h"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div className="sm:col-span-3">
+                <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                  Horário de Atendimento
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={settings.supportHours}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      supportHours: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs text-[#0F172A] outline-none focus:border-[#059669]"
+                />
               </div>
             </div>
           </div>
         </form>
       </section>
 
-      {/* Modal de Custo Fixo */}
-      {costModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <h3 className="text-base font-semibold text-slate-900">
-                {editingCost ? "Editar Custo Fixo" : "Novo Custo Fixo"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setCostModalOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              >
-                <X className="h-4 w-4" />
-              </button>
+      {/* Gaveta Lateral de Custo Fixo */}
+      <SlideOverDrawer
+        open={costDrawerOpen}
+        title={editingCost ? "Editar Custo Fixo" : "Novo Custo Fixo"}
+        subtitle="Despesas recorrentes da plataforma FRdoc."
+        widthClass="max-w-md"
+        onClose={() => setCostDrawerOpen(false)}
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setCostDrawerOpen(false)}
+              className="rounded-lg border border-[#E2E8F0] bg-white px-3.5 py-2 text-xs font-medium text-[#0F172A] hover:bg-slate-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="fixed-cost-form"
+              disabled={savingCost}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#059669] px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {savingCost && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Salvar
+            </button>
+          </div>
+        }
+      >
+        <form id="fixed-cost-form" onSubmit={handleSaveCost} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+              Nome *
+            </label>
+            <input
+              type="text"
+              required
+              value={costName}
+              onChange={(e) => setCostName(e.target.value)}
+              placeholder="Vercel Pro, Domínio..."
+              className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none focus:border-[#059669]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                Categoria
+              </label>
+              <input
+                type="text"
+                required
+                value={costCategory}
+                onChange={(e) => setCostCategory(e.target.value)}
+                className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none focus:border-[#059669]"
+              />
             </div>
 
-            <form onSubmit={handleSaveCost} className="space-y-3.5 p-5">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-700">
-                  Nome do Custo *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={costName}
-                  onChange={(e) => setCostName(e.target.value)}
-                  placeholder="Ex.: Vercel Pro, Resend, Cloudflare..."
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Categoria
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={costCategory}
-                    onChange={(e) => setCostCategory(e.target.value)}
-                    placeholder="Hospedagem, Licenças..."
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Valor Mensal (R$) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={costAmountInput}
-                    onChange={(e) => setCostAmountInput(e.target.value)}
-                    placeholder="120,00"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm font-semibold text-amber-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-700">
-                  Ciclo de Cobrança
-                </label>
-                <select
-                  value={costCycle}
-                  onChange={(e) => setCostCycle(e.target.value as BillingCycle)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                >
-                  <option value="MONTHLY">Mensal</option>
-                  <option value="ANNUAL">Equivalente Mensal (Pagamento Anual)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-700">
-                  Observações (opcional)
-                </label>
-                <input
-                  type="text"
-                  value={costNotes}
-                  onChange={(e) => setCostNotes(e.target.value)}
-                  placeholder="Detalhes ou data de renovação"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setCostModalOpen(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingCost}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  {savingCost && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Salvar Custo
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+                Valor Mensal (R$) *
+              </label>
+              <input
+                type="text"
+                required
+                value={costAmountInput}
+                onChange={(e) => setCostAmountInput(e.target.value)}
+                placeholder="120,00"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 font-mono-num text-sm font-semibold text-[#0F172A] outline-none focus:border-[#059669]"
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+              Periodicidade
+            </label>
+            <select
+              value={costCycle}
+              onChange={(e) => setCostCycle(e.target.value as BillingCycle)}
+              className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none focus:border-[#059669]"
+            >
+              <option value="MONTHLY">Mensal</option>
+              <option value="ANNUAL">Equivalente Mensal (Pagamento Anual)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[#0F172A]">
+              Observações
+            </label>
+            <input
+              type="text"
+              value={costNotes}
+              onChange={(e) => setCostNotes(e.target.value)}
+              className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none focus:border-[#059669]"
+            />
+          </div>
+        </form>
+      </SlideOverDrawer>
     </div>
   );
 }

@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import type { InvoiceStatus, InvoiceType, PaymentMethod } from "@prisma/client";
 import {
-  CheckCircle2,
+  Check,
+  Copy,
+  ExternalLink,
   Loader2,
   MessageCircle,
   Plus,
-  Receipt,
+  RefreshCw,
   RotateCcw,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import {
@@ -24,7 +25,6 @@ import {
 import { formatBRL, formatDateBR, getTodaySaoPaulo } from "@/lib/format";
 import {
   computeInvoiceDisplayStatus,
-  INVOICE_TYPE_LABELS,
   PAYMENT_METHOD_LABELS,
   type InvoiceDisplayStatus,
 } from "@/lib/pricing";
@@ -32,6 +32,7 @@ import { buildWhatsAppChargeUrl } from "@/lib/whatsapp";
 
 interface InvoiceRow {
   id: string;
+  publicToken: string;
   clinicId: string;
   type: InvoiceType;
   competence: string;
@@ -42,8 +43,6 @@ interface InvoiceRow {
   paidAt: string | null;
   paymentMethod: PaymentMethod | null;
   receiptNote: string | null;
-  installmentNumber: number | null;
-  installmentTotal: number | null;
   displayStatus: InvoiceDisplayStatus;
   daysDiff: number;
   statusLabel: string;
@@ -89,8 +88,9 @@ export function PaymentsClient() {
   const [statusFilter, setStatusFilter] = useState<FilterKey>("ALL");
   const [data, setData] = useState<InvoicesApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     text: string;
@@ -128,8 +128,8 @@ export function PaymentsClient() {
     void loadInvoices(competence, statusFilter);
   }, [competence, statusFilter, loadInvoices]);
 
-  async function handleGenerateMonthly() {
-    setGenerating(true);
+  async function handleSyncMonth() {
+    setSyncing(true);
     setFeedback(null);
     try {
       const res = await fetch("/api/invoices/generate-monthly", {
@@ -139,29 +139,25 @@ export function PaymentsClient() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setFeedback({
-          type: "error",
-          text: body.error ?? "Erro ao gerar mensalidades.",
-        });
+        setFeedback({ type: "error", text: body.error ?? "Erro ao sincronizar." });
       } else {
-        setFeedback({
-          type: "success",
-          text: body.message ?? "Mensalidades processadas.",
-        });
+        setFeedback({ type: "success", text: body.message ?? "Sincronizado." });
         await loadInvoices(competence, statusFilter);
       }
-    } catch {
-      setFeedback({
-        type: "error",
-        text: "Falha de comunicação ao gerar mensalidades.",
-      });
     } finally {
-      setGenerating(false);
+      setSyncing(false);
     }
   }
 
+  async function copyPublicLink(inv: InvoiceRow) {
+    const url = `${window.location.origin}/fatura/${inv.publicToken}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedId(inv.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
+
   async function handleReopen(invoice: InvoiceRow) {
-    if (!window.confirm(`Estornar o pagamento de "${invoice.clinic.name}"?`)) return;
+    if (!window.confirm(`Reabrir a fatura de "${invoice.clinic.name}"?`)) return;
     setBusyId(invoice.id);
     try {
       const res = await fetch(`/api/invoices/${invoice.id}`, {
@@ -170,7 +166,6 @@ export function PaymentsClient() {
         body: JSON.stringify({ action: "reopen" }),
       });
       if (res.ok) {
-        setFeedback({ type: "success", text: "Fatura reaberta com sucesso." });
         await loadInvoices(competence, statusFilter);
       }
     } finally {
@@ -179,20 +174,13 @@ export function PaymentsClient() {
   }
 
   async function handleDelete(invoice: InvoiceRow) {
-    if (
-      !window.confirm(
-        `Excluir a fatura "${invoice.description}" de "${invoice.clinic.name}"?`
-      )
-    ) {
+    if (!window.confirm(`Excluir "${invoice.description}" de "${invoice.clinic.name}"?`)) {
       return;
     }
     setBusyId(invoice.id);
     try {
-      const res = await fetch(`/api/invoices/${invoice.id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/invoices/${invoice.id}`, { method: "DELETE" });
       if (res.ok) {
-        setFeedback({ type: "success", text: "Fatura excluída." });
         await loadInvoices(competence, statusFilter);
       }
     } finally {
@@ -203,139 +191,96 @@ export function PaymentsClient() {
   const summary = data?.summary;
   const counts = summary?.counts;
 
-  const filterButtons: Array<{
-    key: FilterKey;
-    label: string;
-    count: number;
-    dot?: string;
-  }> = [
+  const tabs: Array<{ key: FilterKey; label: string; count: number }> = [
     { key: "ALL", label: "Todas", count: counts?.all ?? 0 },
-    {
-      key: "PAID",
-      label: "Pago",
-      count: counts?.paid ?? 0,
-      dot: "bg-emerald-500",
-    },
-    {
-      key: "OPEN",
-      label: "Em Aberto",
-      count: counts?.open ?? 0,
-      dot: "bg-sky-500",
-    },
-    {
-      key: "DUE_SOON",
-      label: "Vence em breve",
-      count: counts?.dueSoon ?? 0,
-      dot: "bg-amber-500",
-    },
-    {
-      key: "OVERDUE",
-      label: "Atrasado",
-      count: counts?.overdue ?? 0,
-      dot: "bg-rose-500",
-    },
+    { key: "OPEN", label: "Em aberto", count: counts?.open ?? 0 },
+    { key: "DUE_SOON", label: "Vence em breve", count: counts?.dueSoon ?? 0 },
+    { key: "OVERDUE", label: "Atrasadas", count: counts?.overdue ?? 0 },
+    { key: "PAID", label: "Pagas", count: counts?.paid ?? 0 },
   ];
 
   return (
-    <div className="space-y-5">
-      {/* Cabeçalho e Ações Principais */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-6">
+      {/* Cabeçalho */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
-            Pagamentos & Faturas
+          <h1 className="text-lg font-semibold tracking-tight text-[#0F172A]">
+            Financeiro
           </h1>
-          <p className="mt-0.5 text-sm text-slate-600">
-            Mensalidades recorrentes, setups parcelados, serviços opcionais e cobrança via WhatsApp.
+          <p className="text-xs text-[#64748B]">
+            Recorrência automática ativa · Links de fatura com QR Code PIX nativo.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <MonthSelector competence={competence} onChange={setCompetence} />
 
           <button
             type="button"
-            onClick={() => void handleGenerateMonthly()}
-            disabled={generating}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60"
+            onClick={() => void handleSyncMonth()}
+            disabled={syncing}
+            title="Sincronizar mensalidades desta competência"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-medium text-[#0F172A] transition hover:bg-slate-50 disabled:opacity-50"
           >
-            {generating ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="h-3.5 w-3.5" />
-            )}
-            Gerar Mensalidades do Mês
+            <RefreshCw className={`h-3.5 w-3.5 text-[#64748B] ${syncing ? "animate-spin" : ""}`} />
+            Sincronizar Mês
           </button>
 
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#059669] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
           >
-            <Plus className="h-4 w-4" />
-            Lançamento Avulso
+            <Plus className="h-3.5 w-3.5" />
+            Nova Cobrança
           </button>
         </div>
       </div>
 
-      {/* Feedback Banner */}
       {feedback && (
         <div
-          className={`flex items-center justify-between rounded-xl border px-4 py-2.5 text-xs font-medium ${
+          className={`flex items-center justify-between rounded-lg border px-4 py-2 text-xs ${
             feedback.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-rose-200 bg-rose-50 text-rose-800"
+              ? "border-emerald-200 bg-emerald-50/70 text-[#059669]"
+              : "border-rose-200 bg-rose-50 text-rose-700"
           }`}
         >
           <span>{feedback.text}</span>
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="ml-4 text-[11px] font-semibold opacity-75 hover:opacity-100"
+            className="ml-4 text-[11px] font-medium opacity-75 hover:opacity-100"
           >
             Fechar
           </button>
         </div>
       )}
 
-      {/* Resumo da Competência */}
+      {/* Faixa de Resumo */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase">
-            Total Faturado
-          </p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-3">
+          <p className="text-xs text-[#64748B]">Faturado no Mês</p>
+          <p className="mt-1 font-mono-num text-lg font-semibold text-[#0F172A]">
             {summary ? formatBRL(summary.totalCents) : "—"}
           </p>
         </div>
-        <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3 shadow-xs">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase">
-            Recebido
-          </p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-emerald-600">
+        <div className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-3">
+          <p className="text-xs text-[#64748B]">Recebido</p>
+          <p className="mt-1 font-mono-num text-lg font-semibold text-[#059669]">
             {summary ? formatBRL(summary.paidCents) : "—"}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase">
-            A Receber
-          </p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-sky-700">
+        <div className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-3">
+          <p className="text-xs text-[#64748B]">Em Aberto</p>
+          <p className="mt-1 font-mono-num text-lg font-semibold text-[#0F172A]">
             {summary ? formatBRL(summary.openCents) : "—"}
           </p>
         </div>
-        <div
-          className={`rounded-xl border px-4 py-3 shadow-xs ${
-            (summary?.overdueCents ?? 0) > 0
-              ? "border-rose-200 bg-rose-50/70"
-              : "border-slate-200 bg-white"
-          }`}
-        >
-          <p className="text-[11px] font-semibold text-slate-500 uppercase">
-            Em Atraso
-          </p>
+        <div className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-3">
+          <p className="text-xs text-[#64748B]">Em Atraso</p>
           <p
             className={`mt-1 font-mono-num text-lg font-semibold ${
-              (summary?.overdueCents ?? 0) > 0 ? "text-rose-700" : "text-slate-700"
+              (summary?.overdueCents ?? 0) > 0 ? "text-rose-600" : "text-[#0F172A]"
             }`}
           >
             {summary ? formatBRL(summary.overdueCents) : "—"}
@@ -343,73 +288,56 @@ export function PaymentsClient() {
         </div>
       </div>
 
-      {/* Filtros Semáforo */}
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
-        {filterButtons.map((btn) => {
-          const active = statusFilter === btn.key;
-          return (
-            <button
-              key={btn.key}
-              type="button"
-              onClick={() => setStatusFilter(btn.key)}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                active
-                  ? "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              {btn.dot && <span className={`h-2 w-2 rounded-full ${btn.dot}`} />}
-              <span>{btn.label}</span>
-              <span
-                className={`rounded px-1.5 py-0.5 font-mono-num text-[10px] font-semibold ${
+      {/* Tabela Executiva */}
+      <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white">
+        {/* Abas de Filtro Internas */}
+        <div className="flex flex-wrap items-center gap-1 border-b border-[#E2E8F0] px-4 py-2.5">
+          {tabs.map((tab) => {
+            const active = statusFilter === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setStatusFilter(tab.key)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
                   active
-                    ? "bg-white text-emerald-800"
-                    : "bg-slate-100 text-slate-600"
+                    ? "bg-slate-100 text-[#0F172A]"
+                    : "text-[#64748B] hover:bg-slate-50 hover:text-[#0F172A]"
                 }`}
               >
-                {btn.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <span>{tab.label}</span>
+                <span className="font-mono-num text-[11px] text-[#64748B]">
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Tabela de Faturas */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[880px] border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
-                <th className="px-4 py-3">Clínica</th>
-                <th className="px-4 py-3">Lançamento</th>
-                <th className="px-4 py-3">Vencimento</th>
-                <th className="px-4 py-3">Valor</th>
-                <th className="px-4 py-3">Semáforo / Pagamento</th>
-                <th className="px-4 py-3 text-right">Ações</th>
+              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-medium text-[#64748B]">
+                <th className="px-4 py-2.5">Clínica</th>
+                <th className="px-4 py-2.5">Descrição</th>
+                <th className="px-4 py-2.5">Vencimento</th>
+                <th className="px-4 py-2.5">Valor</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {loading ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-12 text-center text-sm text-slate-500"
-                  >
-                    <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-                    Carregando recebimentos...
+                  <td colSpan={6} className="px-4 py-12 text-center text-xs text-[#64748B]">
+                    <Loader2 className="mr-2 inline h-4 w-4 animate-spin text-[#059669]" />
+                    Carregando faturas...
                   </td>
                 </tr>
               ) : !data || data.invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-14 text-center">
-                    <Receipt className="mx-auto mb-2.5 h-8 w-8 text-slate-400" />
-                    <p className="text-sm font-semibold text-slate-800">
-                      Nenhuma fatura nesta competência
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Clique em <strong>Gerar Mensalidades do Mês</strong> ou crie um{" "}
-                      <strong>Lançamento Avulso</strong>.
-                    </p>
+                  <td colSpan={6} className="px-4 py-12 text-center text-xs text-[#64748B]">
+                    Nenhuma cobrança registrada para este filtro.
                   </td>
                 </tr>
               ) : (
@@ -419,7 +347,11 @@ export function PaymentsClient() {
                     inv.dueDate
                   );
                   const isPaid = inv.status === "PAID";
-                  const isOverdue = statusMeta.displayStatus === "OVERDUE";
+                  const origin =
+                    typeof window !== "undefined" ? window.location.origin : "";
+                  const invoiceUrl = origin
+                    ? `${origin}/fatura/${inv.publicToken}`
+                    : `/fatura/${inv.publicToken}`;
 
                   const waUrl = buildWhatsAppChargeUrl({
                     whatsapp: inv.clinic.whatsapp,
@@ -428,6 +360,7 @@ export function PaymentsClient() {
                     description: inv.description,
                     amountCents: inv.amountCents,
                     dueDate: inv.dueDate,
+                    invoiceUrl,
                     pixKey: data.settings.pixKey,
                     pixKeyType: data.settings.pixKeyType,
                     pixHolderName: data.settings.pixHolderName,
@@ -435,74 +368,101 @@ export function PaymentsClient() {
                   });
 
                   return (
-                    <tr
-                      key={inv.id}
-                      className={`transition hover:bg-slate-50/80 ${
-                        isOverdue ? "bg-rose-50/40" : ""
-                      }`}
-                    >
-                      {/* Clínica */}
-                      <td className="px-4 py-3.5 align-top">
-                        <p className="font-semibold text-slate-900">
+                    <tr key={inv.id} className="transition hover:bg-slate-50/70">
+                      <td className="px-4 py-3 align-middle">
+                        <p className="text-[13px] font-medium text-[#0F172A]">
                           {inv.clinic.name}
                         </p>
-                        <p className="mt-0.5 text-xs text-slate-600">
+                        <p className="text-[11px] text-[#64748B]">
                           {inv.clinic.responsibleName}
                         </p>
                       </td>
 
-                      {/* Lançamento */}
-                      <td className="px-4 py-3.5 align-top">
-                        <p className="font-medium text-slate-800">
-                          {inv.description}
-                        </p>
-                        <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                          {INVOICE_TYPE_LABELS[inv.type]}
-                        </span>
+                      <td className="px-4 py-3 align-middle">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] text-[#0F172A]">
+                            {inv.description}
+                          </span>
+                          <a
+                            href={`/fatura/${inv.publicToken}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Abrir página pública da fatura"
+                            className="text-[#64748B] hover:text-[#059669]"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
                       </td>
 
-                      {/* Vencimento */}
-                      <td className="px-4 py-3.5 align-top font-mono-num text-xs font-medium text-slate-700">
+                      <td className="px-4 py-3 align-middle font-mono-num text-xs text-[#64748B]">
                         {formatDateBR(inv.dueDate)}
                       </td>
 
-                      {/* Valor */}
-                      <td className="px-4 py-3.5 align-top">
+                      <td className="px-4 py-3 align-middle">
                         <span
-                          className={`font-mono-num text-sm font-semibold ${
-                            isPaid ? "text-emerald-700" : "text-slate-900"
+                          className={`font-mono-num text-[13px] font-semibold ${
+                            isPaid ? "text-[#059669]" : "text-[#0F172A]"
                           }`}
                         >
                           {formatBRL(inv.amountCents)}
                         </span>
                       </td>
 
-                      {/* Semáforo / Pagamento */}
-                      <td className="px-4 py-3.5 align-top">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.badgeClass}`}
-                        >
+                      <td className="px-4 py-3 align-middle">
+                        <div className="flex items-center gap-1.5">
                           <span
                             className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClass}`}
                           />
-                          {statusMeta.label}
-                        </span>
+                          <span className="text-xs font-medium text-[#0F172A]">
+                            {statusMeta.label}
+                          </span>
+                        </div>
                         {isPaid && (
-                          <p className="mt-1 text-[11px] text-slate-600">
+                          <p className="mt-0.5 text-[11px] text-[#64748B]">
                             {inv.paidAt ? formatDateBR(inv.paidAt) : ""}
                             {inv.paymentMethod
                               ? ` · ${PAYMENT_METHOD_LABELS[inv.paymentMethod]}`
                               : ""}
-                            {inv.receiptNote ? ` · ${inv.receiptNote}` : ""}
                           </p>
                         )}
                       </td>
 
-                      {/* Ações */}
-                      <td className="px-4 py-3.5 text-right align-top">
+                      <td className="px-4 py-3 text-right align-middle">
                         <div className="inline-flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => void copyPublicLink(inv)}
+                            title="Copiar link público da fatura com PIX"
+                            className="inline-flex items-center gap-1 rounded-md border border-[#E2E8F0] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] transition hover:bg-slate-50"
+                          >
+                            {copiedId === inv.id ? (
+                              <>
+                                <Check className="h-3 w-3 text-[#059669]" />
+                                Copiado
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3 text-[#64748B]" />
+                                Link
+                              </>
+                            )}
+                          </button>
+
                           {!isPaid ? (
                             <>
+                              {waUrl && (
+                                <a
+                                  href={waUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-md border border-[#E2E8F0] bg-white px-2 py-1 text-xs font-medium text-[#0F172A] transition hover:bg-slate-50"
+                                >
+                                  <MessageCircle className="h-3 w-3 text-[#64748B]" />
+                                  WhatsApp
+                                </a>
+                              )}
+
                               <button
                                 type="button"
                                 onClick={() =>
@@ -514,36 +474,19 @@ export function PaymentsClient() {
                                     dueDate: inv.dueDate,
                                   })
                                 }
-                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                                className="rounded-md bg-[#059669] px-2.5 py-1 text-xs font-medium text-white transition hover:bg-emerald-700"
                               >
-                                <CheckCircle2 className="h-3.5 w-3.5" />
                                 Dar Baixa
                               </button>
-
-                              {waUrl && (
-                                <a
-                                  href={waUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
-                                    isOverdue
-                                      ? "border-rose-300 bg-white text-rose-700 hover:bg-rose-50"
-                                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                                  }`}
-                                >
-                                  <MessageCircle className="h-3.5 w-3.5" />
-                                  {isOverdue ? "Cobrar" : "Lembrar"}
-                                </a>
-                              )}
                             </>
                           ) : (
                             <button
                               type="button"
                               onClick={() => void handleReopen(inv)}
                               disabled={busyId === inv.id}
-                              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+                              className="inline-flex items-center gap-1 rounded-md border border-[#E2E8F0] bg-white px-2 py-1 text-xs font-medium text-[#64748B] transition hover:bg-slate-50 hover:text-[#0F172A] disabled:opacity-50"
                             >
-                              <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+                              <RotateCcw className="h-3 w-3" />
                               Estornar
                             </button>
                           )}
@@ -553,7 +496,7 @@ export function PaymentsClient() {
                             onClick={() => void handleDelete(inv)}
                             disabled={busyId === inv.id}
                             aria-label="Excluir fatura"
-                            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                            className="rounded-md p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
                           >
                             {busyId === inv.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />

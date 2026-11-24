@@ -16,6 +16,7 @@ export interface WhatsAppChargeParams {
   description: string;
   amountCents: number;
   dueDate: Date | string;
+  invoiceUrl?: string | null;
   pixKey?: string | null;
   pixKeyType?: string | null;
   pixHolderName?: string | null;
@@ -27,53 +28,29 @@ export function buildWhatsAppChargeMessage(params: WhatsAppChargeParams): string
   const amountText = formatBRL(params.amountCents);
   const dueText = formatDateBR(params.dueDate);
   const brand = params.companyName?.trim() || "FRdoc";
-  const firstName = params.responsibleName.trim().split(/\s+/)[0] || params.responsibleName;
+  const firstName =
+    params.responsibleName.trim().split(/\s+/)[0] || params.responsibleName;
 
-  const pixLines: string[] = [];
-  if (params.pixKey && params.pixKey.trim()) {
-    const keyType = params.pixKeyType?.trim() ? ` (${params.pixKeyType.trim()})` : "";
-    pixLines.push(`*Chave PIX${keyType}:* ${params.pixKey.trim()}`);
-    if (params.pixHolderName?.trim()) {
-      pixLines.push(`*Titular:* ${params.pixHolderName.trim()}`);
-    }
-  }
-
-  const pixBlock =
-    pixLines.length > 0
-      ? `\n\nDados para pagamento via PIX:\n${pixLines.join("\n")}`
+  const linkLine = params.invoiceUrl?.trim()
+    ? `\n\nLink da fatura com QR Code PIX:\n${params.invoiceUrl.trim()}`
+    : params.pixKey?.trim()
+      ? `\n\nPIX (${params.pixKeyType || "Chave"}): ${params.pixKey.trim()}`
       : "";
 
   if (daysDiff < 0) {
-    const overdueDays = Math.abs(daysDiff);
-    const daysLabel = overdueDays === 1 ? "1 dia" : `${overdueDays} dias`;
     return (
-      `Olá, ${firstName}! Tudo bem?\n\n` +
-      `Passando para lembrar sobre a fatura em aberto da *${params.clinicName}* referente à *${params.description}* (${brand}):\n\n` +
-      `• *Valor:* ${amountText}\n` +
-      `• *Vencimento original:* ${dueText} (em atraso há ${daysLabel})` +
-      pixBlock +
-      `\n\nCaso o pagamento já tenha sido efetuado, por gentileza desconsidere esta mensagem e nos envie o comprovante por aqui. Qualquer dúvida, fico à disposição!`
-    );
-  }
-
-  if (daysDiff === 0) {
-    return (
-      `Olá, ${firstName}! Tudo bem?\n\n` +
-      `Lembrete amigável: vence *hoje (${dueText})* a fatura da *${params.clinicName}* referente à *${params.description}* (${brand}).\n\n` +
-      `• *Valor:* ${amountText}\n` +
-      `• *Vencimento:* ${dueText}` +
-      pixBlock +
-      `\n\nAssim que realizar o pagamento, se puder nos encaminhar o comprovante por aqui, agradeço. Qualquer dúvida estou à disposição!`
+      `Olá, ${firstName}. Tudo bem?\n\n` +
+      `Identificamos em aberto a fatura da *${params.clinicName}* referente a *${params.description}* (${brand}), no valor de *${amountText}* (vencimento ${dueText}).` +
+      linkLine +
+      `\n\nCaso já tenha efetuado o pagamento, por gentileza desconsidere.`
     );
   }
 
   return (
-    `Olá, ${firstName}! Tudo bem?\n\n` +
-    `Segue o lembrete da próxima fatura da *${params.clinicName}* referente à *${params.description}* (${brand}):\n\n` +
-    `• *Valor:* ${amountText}\n` +
-    `• *Vencimento:* ${dueText}` +
-    pixBlock +
-    `\n\nSe precisar de qualquer apoio, conte comigo. Um ótimo dia!`
+    `Olá, ${firstName}. Tudo bem?\n\n` +
+    `Segue a fatura da *${params.clinicName}* referente a *${params.description}* (${brand}), no valor de *${amountText}* com vencimento em *${dueText}*.` +
+    linkLine +
+    `\n\nQualquer dúvida, estamos à disposição.`
   );
 }
 

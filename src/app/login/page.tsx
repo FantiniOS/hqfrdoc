@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Lock, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -41,52 +41,39 @@ function LoginForm() {
       router.replace(safeNext);
       router.refresh();
     } catch {
-      setError("Falha de conexão com o servidor. Tente novamente.");
+      setError("Falha de conexão com o servidor.");
       setLoading(false);
     }
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-12">
-      {/* Destaque sutil superior */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-36 left-1/2 h-96 w-[40rem] -translate-x-1/2 rounded-full bg-emerald-200/35 blur-3xl"
-      />
-
-      <div className="relative w-full max-w-md">
-        {/* Marca */}
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-xs">
-            <ShieldCheck className="h-6 w-6" />
+    <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 py-12 text-[#0F172A]">
+      <div className="w-full max-w-[380px]">
+        <div className="mb-6 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] bg-white text-[#059669]">
+            <ShieldCheck className="h-4 w-4" />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold tracking-tight text-slate-900">
-              FRdoc
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-lg font-semibold tracking-tight text-[#0F172A]">
+              FRdoc HQ
             </span>
-            <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold tracking-wider text-emerald-700 uppercase">
-              HQ
-            </span>
+            <span className="text-xs text-[#64748B]">· Administração</span>
           </div>
-          <p className="mt-2 text-sm text-slate-600">
-            Painel Master Administrativo e Financeiro
-          </p>
         </div>
 
-        {/* Card de Login */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-          <div className="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
-            <Lock className="h-4 w-4 text-slate-500" />
-            <span className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
-              Acesso Restrito ao Proprietário
-            </span>
-          </div>
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-6">
+          <h1 className="text-sm font-semibold text-[#0F172A]">
+            Acessar painel executivo
+          </h1>
+          <p className="mt-1 text-xs text-[#64748B]">
+            Uso exclusivo da administração FRdoc.
+          </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             <div>
               <label
                 htmlFor="username"
-                className="mb-1.5 block text-xs font-medium text-slate-700"
+                className="mb-1.5 block text-xs font-medium text-[#0F172A]"
               >
                 Usuário
               </label>
@@ -99,15 +86,15 @@ function LoginForm() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Digite seu usuário"
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                placeholder="fantini"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] placeholder-slate-400 outline-none transition focus:border-[#059669] focus:ring-2 focus:ring-emerald-500/15"
               />
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="mb-1.5 block text-xs font-medium text-slate-700"
+                className="mb-1.5 block text-xs font-medium text-[#0F172A]"
               >
                 Senha
               </label>
@@ -121,12 +108,12 @@ function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 pr-9 text-sm text-[#0F172A] placeholder-slate-400 outline-none transition focus:border-[#059669] focus:ring-2 focus:ring-emerald-500/15"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#64748B] transition hover:text-[#0F172A]"
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {showPassword ? (
@@ -139,8 +126,8 @@ function LoginForm() {
             </div>
 
             {error && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+              <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-600" />
                 <span>{error}</span>
               </div>
             )}
@@ -148,23 +135,19 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#059669] px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Validando acesso...
+                  Entrando...
                 </>
               ) : (
-                "Entrar no FRdoc HQ"
+                "Entrar"
               )}
             </button>
           </form>
         </div>
-
-        <p className="mt-6 text-center text-xs text-slate-500">
-          Ambiente isolado · Sem indexação pública · Sessão criptografada
-        </p>
       </div>
     </div>
   );
@@ -174,7 +157,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">
+        <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] text-sm text-[#64748B]">
           Carregando...
         </div>
       }

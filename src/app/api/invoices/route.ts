@@ -3,6 +3,10 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth-server";
 import {
+  ensureMonthlyInvoicesForCompetence,
+  generateCryptoHexToken,
+} from "@/lib/billing-automation";
+import {
   buildDueDateForCompetence,
   getTodaySaoPaulo,
   isValidCompetence,
@@ -43,6 +47,11 @@ export async function GET(request: Request) {
       ? rawCompetence
       : today.competence;
     const statusFilter = searchParams.get("status")?.trim() ?? "ALL";
+
+    // Automação de recorrência: garante mensalidades da competência corrente
+    if (competence === today.competence) {
+      await ensureMonthlyInvoicesForCompetence(today.competence);
+    }
 
     const [rawInvoices, clinics, settings] = await Promise.all([
       prisma.invoice.findMany({
@@ -94,7 +103,6 @@ export async function GET(request: Request) {
         ? enriched.filter((inv) => inv.displayStatus === statusFilter)
         : enriched;
 
-    // Resumo do mês completo (antes do filtro visual de status)
     const summary = {
       totalCents: enriched
         .filter((i) => i.status !== "CANCELED")
@@ -190,6 +198,7 @@ export async function POST(request: Request) {
       const amountCents = idx === 0 ? baseAmount + remainder : baseAmount;
 
       return {
+        publicToken: generateCryptoHexToken(24),
         clinicId: data.clinicId,
         type: data.type,
         competence: comp,
@@ -218,7 +227,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Já existe um lançamento deste mesmo tipo para esta clínica em uma das competências selecionadas. Edite o lançamento existente ou escolha outro tipo.",
+            "Já existe um lançamento deste mesmo tipo para esta clínica em uma das competências selecionadas.",
         },
         { status: 409 }
       );

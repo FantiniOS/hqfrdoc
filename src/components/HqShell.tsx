@@ -4,20 +4,20 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  LayoutDashboard,
   Building2,
-  Receipt,
-  SlidersHorizontal,
-  LogOut,
-  ShieldCheck,
+  LayoutDashboard,
   Loader2,
+  LogOut,
+  Receipt,
+  Settings,
+  ShieldCheck,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Visão Geral", icon: LayoutDashboard },
   { href: "/clinicas", label: "Clínicas", icon: Building2 },
-  { href: "/pagamentos", label: "Pagamentos", icon: Receipt },
-  { href: "/configuracoes", label: "Custos & Config", icon: SlidersHorizontal },
+  { href: "/financeiro", label: "Financeiro", icon: Receipt },
+  { href: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
 export function HqShell({
@@ -41,116 +41,121 @@ export function HqShell({
     }
   }
 
+  function isItemActive(href: string): boolean {
+    if (href === "/") return pathname === "/";
+    if (href === "/clinicas") {
+      return pathname.startsWith("/clinicas") || pathname.startsWith("/clinics");
+    }
+    if (href === "/financeiro") {
+      return pathname.startsWith("/financeiro") || pathname.startsWith("/pagamentos");
+    }
+    return pathname.startsWith(href);
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 print:min-h-0 print:bg-white">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-2xs backdrop-blur-md print:hidden">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-base font-semibold tracking-tight text-slate-900">
-                FRdoc
-              </span>
-              <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-700 uppercase">
-                HQ
-              </span>
-            </div>
-          </Link>
+    <div className="flex min-h-screen bg-[#F8FAFC] text-[#0F172A]">
+      {/* Navegação Lateral Enxuta (Desktop) */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-56 flex-col border-r border-[#E2E8F0] bg-white md:flex">
+        <div className="flex h-14 items-center gap-2.5 border-b border-[#E2E8F0] px-5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 text-[#059669]">
+            <ShieldCheck className="h-4 w-4" />
+          </div>
+          <span className="text-sm font-semibold tracking-tight text-[#0F172A]">
+            FRdoc HQ
+          </span>
+        </div>
 
-          {/* Navegação 4 Abas */}
-          <nav
-            aria-label="Navegação principal"
-            className="hidden items-center gap-1 rounded-xl border border-slate-200 bg-slate-100/80 p-1 md:flex"
-          >
-            {NAV_ITEMS.map((item) => {
-              const active =
-                item.href === "/"
-                  ? pathname === "/"
-                  : item.href === "/clinicas"
-                    ? pathname.startsWith("/clinicas") ||
-                      pathname.startsWith("/clinics")
-                    : pathname.startsWith(item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${
-                    active
-                      ? "bg-white text-slate-900 shadow-xs ring-1 ring-slate-200/80"
-                      : "text-slate-600 hover:bg-white/60 hover:text-slate-900"
+        <nav aria-label="Menu principal" className="flex-1 space-y-0.5 px-3 py-4">
+          {NAV_ITEMS.map((item) => {
+            const active = isItemActive(item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition ${
+                  active
+                    ? "bg-slate-100/90 text-[#0F172A]"
+                    : "text-[#64748B] hover:bg-slate-50 hover:text-[#0F172A]"
+                }`}
+              >
+                <Icon
+                  className={`h-4 w-4 ${
+                    active ? "text-[#059669]" : "text-slate-400"
                   }`}
-                >
-                  <Icon
-                    className={`h-4 w-4 ${active ? "text-emerald-600" : "text-slate-400"}`}
-                  />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+                />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
-          {/* Usuário & Sair */}
-          <div className="flex items-center gap-2.5">
-            <div className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600 sm:flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span className="font-medium text-slate-700">{username}</span>
+        <div className="border-t border-[#E2E8F0] p-3">
+          <div className="flex items-center justify-between rounded-lg px-2 py-1.5">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#059669]" />
+              <span className="font-medium text-[#0F172A]">{username}</span>
             </div>
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => void handleLogout()}
               disabled={loggingOut}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-60"
+              title="Encerrar sessão"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[#64748B] transition hover:bg-slate-100 hover:text-[#0F172A] disabled:opacity-50"
             >
               {loggingOut ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <LogOut className="h-3.5 w-3.5 text-slate-500" />
+                <LogOut className="h-3.5 w-3.5" />
               )}
               <span>Sair</span>
             </button>
           </div>
         </div>
+      </aside>
 
-        {/* Navegação mobile compacta */}
-        <div className="border-t border-slate-200 bg-white px-3 py-2 md:hidden">
-          <div className="grid grid-cols-4 gap-1">
+      {/* Coluna Principal */}
+      <div className="flex min-w-0 flex-1 flex-col md:pl-56">
+        {/* Barra Mobile Compacta */}
+        <header className="sticky top-0 z-20 border-b border-[#E2E8F0] bg-white/95 backdrop-blur-sm md:hidden">
+          <div className="flex h-13 items-center justify-between px-4">
+            <Link href="/" className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-[#059669]" />
+              <span className="text-sm font-semibold text-[#0F172A]">FRdoc HQ</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              disabled={loggingOut}
+              className="text-xs font-medium text-[#64748B] hover:text-[#0F172A]"
+            >
+              Sair
+            </button>
+          </div>
+          <nav className="grid grid-cols-4 border-t border-[#E2E8F0] px-2 py-1.5">
             {NAV_ITEMS.map((item) => {
-              const active =
-                item.href === "/"
-                  ? pathname === "/"
-                  : item.href === "/clinicas"
-                    ? pathname.startsWith("/clinicas") ||
-                      pathname.startsWith("/clinics")
-                    : pathname.startsWith(item.href);
+              const active = isItemActive(item.href);
               const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-medium transition ${
-                    active
-                      ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  className={`flex flex-col items-center gap-0.5 rounded-md py-1 text-[11px] font-medium ${
+                    active ? "text-[#059669]" : "text-[#64748B]"
                   }`}
                 >
-                  <Icon
-                    className={`h-4 w-4 ${active ? "text-emerald-600" : "text-slate-400"}`}
-                  />
+                  <Icon className="h-4 w-4" />
                   <span className="truncate">{item.label}</span>
                 </Link>
               );
             })}
-          </div>
-        </div>
-      </header>
+          </nav>
+        </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 print:max-w-none print:p-0">
-        {children}
-      </main>
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

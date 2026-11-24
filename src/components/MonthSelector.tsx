@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   getCompetenceLabel,
   getTodaySaoPaulo,
@@ -18,26 +18,25 @@ export function MonthSelector({
   const isCurrentMonth = competence === currentCompetence;
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+    <div className="inline-flex items-center gap-0.5 rounded-lg border border-[#E2E8F0] bg-white p-0.5">
       <button
         type="button"
         onClick={() => onChange(shiftCompetence(competence, -1))}
         aria-label="Mês anterior"
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-[#64748B] transition hover:bg-slate-100 hover:text-[#0F172A]"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
 
-      <div className="flex min-w-[155px] items-center justify-center gap-2 px-2 text-sm font-medium text-slate-900">
-        <Calendar className="h-3.5 w-3.5 text-emerald-600" />
-        <span>{getCompetenceLabel(competence)}</span>
-      </div>
+      <span className="min-w-[138px] px-2 text-center text-xs font-medium text-[#0F172A]">
+        {getCompetenceLabel(competence)}
+      </span>
 
       <button
         type="button"
         onClick={() => onChange(shiftCompetence(competence, 1))}
         aria-label="Próximo mês"
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-[#64748B] transition hover:bg-slate-100 hover:text-[#0F172A]"
       >
         <ChevronRight className="h-4 w-4" />
       </button>
@@ -46,9 +45,9 @@ export function MonthSelector({
         <button
           type="button"
           onClick={() => onChange(currentCompetence)}
-          className="ml-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+          className="ml-0.5 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-[#0F172A] transition hover:bg-slate-200/70"
         >
-          Mês atual
+          Atual
         </button>
       )}
     </div>

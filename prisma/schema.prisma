@@ -73,6 +73,7 @@ model Clinic {
   activeDoctors      Int          @default(1)
   planTier           PlanTier     @default(SMALL)
   isFounder          Boolean      @default(false)
+  setupFee           Float?
   setupFeeCents      Int          @default(180000)
   setupInstallments  Int?
   monthlyFeeCents    Int          @default(79000)
@@ -91,6 +92,7 @@ model Clinic {
   updatedAt          DateTime     @updatedAt
 
   invoices           Invoice[]
+  contracts          Contract[]
 
   @@index([status])
   @@index([planTier])
@@ -98,8 +100,53 @@ model Clinic {
   @@index([contractStatus])
 }
 
+model Contract {
+  id                      String    @id @default(cuid())
+  clinicId                String
+  clinic                  Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  token                   String    @unique // 48 chars hex criptográfico
+  status                  String    @default("SENT") // DRAFT | SENT | SIGNED
+  contentSnapshot         String    @db.Text
+  documentHash            String    // SHA-256 de contentSnapshot
+
+  planSnapshot            String
+  monthlyFeeSnapshot      Int       // em centavos
+  setupFeeSnapshot        Int       // em centavos
+  setupInstallments       Int       @default(1)
+  isFounderSnapshot       Boolean   @default(false)
+  dueDaySnapshot          Int       @default(10)
+  infraSnapshot           String    @default("Oracle Always Free")
+  penaltyPctSnapshot      Int       @default(30)
+  courtSnapshot           String    @default("Contagem/MG")
+  clinicLegalNameSnapshot String?
+  clinicCnpjSnapshot      String?
+  clinicSubdomainSnapshot String?
+  hqLegalNameSnapshot     String?
+  hqCnpjSnapshot          String?
+
+  fidelityMonths          Int       @default(12)
+  startDate               DateTime
+  endDate                 DateTime
+
+  signedAt                DateTime?
+  signerName              String?
+  signerCpf               String?
+  signerIp                String?
+  signerUserAgent         String?
+  signatureDataUrl        String?   @db.Text
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@index([clinicId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model Invoice {
   id                String         @id @default(cuid())
+  publicToken       String         @unique @default(dbgenerated("concat(md5(random()::text || clock_timestamp()::text), substr(md5(clock_timestamp()::text || random()::text), 1, 16))"))
   clinicId          String
   clinic            Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 

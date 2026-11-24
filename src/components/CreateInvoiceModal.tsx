@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { InvoiceType } from "@prisma/client";
-import { Loader2, Receipt, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { SlideOverDrawer } from "@/components/SlideOverDrawer";
 import {
   centsToReaisString,
   formatBRL,
@@ -124,8 +125,6 @@ export function CreateInvoiceModal({
     });
   }, [type, installments, amountInput, dueDate]);
 
-  if (!open) return null;
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -164,8 +163,8 @@ export function CreateInvoiceModal({
       const count = data.createdCount ?? 1;
       onCreated(
         count > 1
-          ? `Setup parcelado lançado em ${count} parcelas mensais com sucesso.`
-          : "Lançamento avulso registrado com sucesso."
+          ? `Setup lançado em ${count} parcelas mensais.`
+          : "Cobrança registrada com QR Code PIX automático."
       );
       onClose();
     } catch {
@@ -176,192 +175,165 @@ export function CreateInvoiceModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600">
-              <Receipt className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-slate-900">
-                Novo Lançamento Avulso
-              </h2>
-              <p className="text-xs text-slate-600">
-                Setup Inicial (1x a 3x) ou Serviços Opcionais
-              </p>
-            </div>
-          </div>
+    <SlideOverDrawer
+      open={open}
+      title="Nova Cobrança Avulsa"
+      subtitle="Gera automaticamente link público /fatura com QR Code PIX EMV."
+      widthClass="max-w-lg"
+      onClose={onClose}
+      footer={
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Fechar"
+            className="rounded-lg border border-[#E2E8F0] bg-white px-3.5 py-2 text-xs font-medium text-[#0F172A] transition hover:bg-slate-50"
           >
-            <X className="h-4 w-4" />
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="create-invoice-form"
+            disabled={saving || clinics.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#059669] px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Criar Cobrança
           </button>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4 p-5">
-          {clinics.length === 0 ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-800">
-              Cadastre pelo menos uma clínica antes de criar lançamentos avulsos.
+      }
+    >
+      <form id="create-invoice-form" onSubmit={handleSubmit} className="space-y-4">
+        {clinics.length === 0 ? (
+          <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4 text-xs text-[#64748B]">
+            Cadastre uma clínica antes de criar cobranças avulsas.
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-[#0F172A]">
+                Clínica
+              </label>
+              <select
+                required
+                value={clinicId}
+                onChange={(e) => handleClinicChange(e.target.value)}
+                className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none focus:border-[#059669] focus:ring-2 focus:ring-emerald-500/15"
+              >
+                {clinics.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : (
-            <>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-700">
-                  Clínica *
-                </label>
-                <select
-                  required
-                  value={clinicId}
-                  onChange={(e) => handleClinicChange(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                >
-                  {clinics.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-700">
-                  Tipo de Cobrança *
-                </label>
-                <select
-                  value={type}
-                  onChange={(e) => handleTypeChange(e.target.value as InvoiceType)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                >
-                  {SERVICE_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {INVOICE_TYPE_LABELS[t]}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-[#0F172A]">
+                Tipo
+              </label>
+              <select
+                value={type}
+                onChange={(e) => handleTypeChange(e.target.value as InvoiceType)}
+                className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none focus:border-[#059669] focus:ring-2 focus:ring-emerald-500/15"
+              >
+                {SERVICE_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {INVOICE_TYPE_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+            </div>
 
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-[#0F172A]">
+                Descrição na fatura
+              </label>
+              <input
+                type="text"
+                required
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none focus:border-[#059669] focus:ring-2 focus:ring-emerald-500/15"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-700">
-                  Descrição
+                <label className="mb-1.5 block text-xs font-medium text-[#0F172A]">
+                  Valor Total (R$)
                 </label>
                 <input
                   type="text"
                   required
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Ex.: Setup Inicial, Migração de prontuários..."
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  value={amountInput}
+                  onChange={(e) => setAmountInput(e.target.value)}
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 font-mono-num text-sm font-semibold text-[#0F172A] outline-none focus:border-[#059669] focus:ring-2 focus:ring-emerald-500/15"
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Valor Total (R$) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={amountInput}
-                    onChange={(e) => setAmountInput(e.target.value)}
-                    placeholder="1800,00"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm font-semibold text-emerald-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-700">
-                    {type === "SETUP" && installments > 1
-                      ? "Vencimento da 1ª Parcela *"
-                      : "Data de Vencimento *"}
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#0F172A]">
+                  {type === "SETUP" && installments > 1
+                    ? "1º Vencimento"
+                    : "Vencimento"}
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none focus:border-[#059669] focus:ring-2 focus:ring-emerald-500/15"
+                />
               </div>
-
-              {/* Parcelamento de Setup */}
-              {type === "SETUP" && (
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-700">
-                    Parcelamento do Setup
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {([1, 2, 3] as const).map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setInstallments(n)}
-                        className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
-                          installments === n
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
-                        }`}
-                      >
-                        {n === 1 ? "1x (À vista)" : `${n}x mensais`}
-                      </button>
-                    ))}
-                  </div>
-
-                  {installmentPreview.length > 0 && (
-                    <div className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <p className="mb-1.5 text-[11px] font-medium text-slate-600">
-                        Parcelas que serão geradas automaticamente:
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {installmentPreview.map((p) => (
-                          <span
-                            key={p.num}
-                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-mono-num text-[11px] text-slate-700"
-                          >
-                            {p.num}/{installments} ({p.label}):{" "}
-                            <strong className="text-emerald-700">
-                              {formatBRL(p.cents)}
-                            </strong>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-
-          {error && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700">
-              {error}
             </div>
-          )}
 
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving || clinics.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Lançar Fatura
-            </button>
+            {type === "SETUP" && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#0F172A]">
+                  Parcelamento
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([1, 2, 3] as const).map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setInstallments(n)}
+                      className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                        installments === n
+                          ? "border-[#059669] bg-emerald-50/70 text-[#059669]"
+                          : "border-[#E2E8F0] bg-white text-[#64748B] hover:bg-slate-50 hover:text-[#0F172A]"
+                      }`}
+                    >
+                      {n === 1 ? "À vista (1x)" : `${n}x mensais`}
+                    </button>
+                  ))}
+                </div>
+
+                {installmentPreview.length > 0 && (
+                  <div className="mt-2.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-xs text-[#64748B]">
+                    <div className="flex flex-wrap gap-2">
+                      {installmentPreview.map((p) => (
+                        <span
+                          key={p.num}
+                          className="rounded border border-[#E2E8F0] bg-white px-2 py-1 font-mono-num text-[11px] text-[#0F172A]"
+                        >
+                          {p.num}/{installments} ({p.label}): {formatBRL(p.cents)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {error && (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            {error}
           </div>
-        </form>
-      </div>
-    </div>
+        )}
+      </form>
+    </SlideOverDrawer>
   );
 }

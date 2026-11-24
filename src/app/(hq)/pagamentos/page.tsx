@@ -1,7 +1,5 @@
-import { PaymentsClient } from "@/components/PaymentsClient";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default function PaymentsPage() {
-  return <PaymentsClient />;
+export default function LegacyPaymentsRedirect() {
+  redirect("/financeiro");
 }

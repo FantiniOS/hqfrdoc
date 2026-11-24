@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { ensureMonthlyInvoicesForCompetence } from "@/lib/billing-automation";
 import {
   getLastNCompetences,
   getShortCompetenceLabel,
@@ -6,6 +6,7 @@ import {
   isValidCompetence,
 } from "@/lib/format";
 import { computeInvoiceDisplayStatus, getTierCeilingAlert } from "@/lib/pricing";
+import { prisma } from "@/lib/prisma";
 
 export async function getOrCreateSettings() {
   return prisma.hqSettings.upsert({
@@ -19,6 +20,12 @@ export async function getOrCreateSettings() {
       pixKeyType: "CNPJ",
       pixHolderName: "FRdoc",
       companyName: "FRdoc",
+      contractCourt: "Contagem/MG",
+      defaultFidelityMonths: 12,
+      defaultFidelityPenaltyPct: 30,
+      defaultSuspensionDays: 15,
+      supportChannel: "WhatsApp",
+      supportHours: "Segunda a sexta, das 08h às 18h",
     },
   });
 }
@@ -29,6 +36,11 @@ export async function getDashboardData(competenceInput?: string) {
     competenceInput && isValidCompetence(competenceInput)
       ? competenceInput
       : today.competence;
+
+  // Automação idempotente: garante que as mensalidades do mês corrente existam
+  if (competence === today.competence) {
+    await ensureMonthlyInvoicesForCompetence(today.competence);
+  }
 
   const sixCompetences = getLastNCompetences(competence, 6);
 
@@ -64,21 +76,17 @@ export async function getDashboardData(competenceInput?: string) {
       }),
     ]);
 
-  // Clínicas ativas e MRR previsto
   const activeClinics = clinics.filter((c) => c.status === "ACTIVE");
   const delinquentClinics = clinics.filter((c) => c.status === "DELINQUENT");
   const mrrCents = activeClinics.reduce((sum, c) => sum + c.monthlyFeeCents, 0);
   const activeDoctorsTotal = activeClinics.reduce((sum, c) => sum + c.activeDoctors, 0);
 
-  // Custos mensais de infraestrutura (todas as clínicas não canceladas que possuem custo > 0)
   const clinicInfraCents = clinics
     .filter((c) => c.status !== "CANCELED")
     .reduce((sum, c) => sum + c.infraCostCents, 0);
 
-  // Custos fixos da plataforma ativos
   const fixedCostsCents = fixedCosts.reduce((sum, f) => sum + f.monthlyAmountCents, 0);
 
-  // Recebido na competência selecionada (mensalidades + setups + serviços pagos)
   const paidMonthInvoices = monthInvoices.filter((inv) => inv.status === "PAID");
   const receivedCents = paidMonthInvoices.reduce((sum, inv) => sum + inv.amountCents, 0);
   const receivedMonthlyCents = paidMonthInvoices
@@ -86,11 +94,9 @@ export async function getDashboardData(competenceInput?: string) {
     .reduce((sum, inv) => sum + inv.amountCents, 0);
   const receivedExtrasCents = receivedCents - receivedMonthlyCents;
 
-  // A receber na competência selecionada
   const openMonthInvoices = monthInvoices.filter((inv) => inv.status === "OPEN");
   const pendingMonthCents = openMonthInvoices.reduce((sum, inv) => sum + inv.amountCents, 0);
 
-  // Atrasados globais (todas as faturas OPEN com vencimento anterior a hoje)
   const annotatedOpenInvoices = allOpenInvoices.map((inv) => {
     const computed = computeInvoiceDisplayStatus(inv.status, inv.dueDate);
     return {
@@ -105,17 +111,16 @@ export async function getDashboardData(competenceInput?: string) {
   const overdueCents = overdueInvoices.reduce((sum, inv) => sum + inv.amountCents, 0);
   const overdueCount = overdueInvoices.length;
 
-  // A receber na competência + atrasados de competências anteriores (para não perder inadimplência de vista)
   const overduePriorMonthsCents = overdueInvoices
     .filter((inv) => inv.competence !== competence)
     .reduce((sum, inv) => sum + inv.amountCents, 0);
   const receivableTotalCents = pendingMonthCents + overduePriorMonthsCents;
 
-  // Painel de Ação Rápida: faturas vencidas OU vencendo nos próximos 5 dias
   const quickActionInvoices = annotatedOpenInvoices
     .filter((inv) => inv.daysDiff <= 5)
     .map((inv) => ({
       id: inv.id,
+      publicToken: inv.publicToken,
       clinicId: inv.clinicId,
       clinicName: inv.clinic.name,
       responsibleName: inv.clinic.responsibleName,
@@ -131,17 +136,14 @@ export async function getDashboardData(competenceInput?: string) {
       statusLabel: inv.statusLabel,
     }));
 
-  // Imposto calculado pela alíquota configurada sobre o faturamento recebido no mês
   const taxRatePercent = settings.taxRatePercent;
   const taxCents = Math.round(receivedCents * (taxRatePercent / 100));
   const totalCostsAndTaxesCents = clinicInfraCents + fixedCostsCents + taxCents;
 
-  // Lucro Líquido Real e Margem
   const netProfitCents = receivedCents - totalCostsAndTaxesCents;
   const profitMarginPercent =
     receivedCents > 0 ? (netProfitCents / receivedCents) * 100 : 0;
 
-  // Clínicas no teto da faixa (oportunidade de upgrade)
   const upgradeAlerts = clinics
     .filter((c) => c.status === "ACTIVE" || c.status === "ONBOARDING")
     .map((c) => ({
@@ -153,7 +155,6 @@ export async function getDashboardData(competenceInput?: string) {
     }))
     .filter((item) => item.alert.show);
 
-  // Série dos últimos 6 meses para Recharts
   const paidByCompetence = new Map<string, number>();
   for (const inv of chartInvoices) {
     paidByCompetence.set(

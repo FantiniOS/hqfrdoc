@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { ContractClient } from "@/components/ContractClient";
 import { getServerSession } from "@/lib/auth-server";
+import { buildContractPayload } from "@/lib/contract";
 import { getOrCreateSettings } from "@/lib/hq-data";
 import { prisma } from "@/lib/prisma";
 
@@ -14,7 +15,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const session = await getServerSession();
   if (!session) {
-    return { title: "Contrato FRdoc 2.0 — FRdoc HQ" };
+    return { title: "Contrato — FRdoc HQ" };
   }
 
   const { id } = await params;
@@ -24,9 +25,7 @@ export async function generateMetadata({
   });
 
   return {
-    title: clinic
-      ? `Contrato FRdoc 2.0 — ${clinic.name}`
-      : "Contrato FRdoc 2.0 — FRdoc HQ",
+    title: clinic ? `Contrato — ${clinic.name}` : "Contrato — FRdoc HQ",
   };
 }
 
@@ -45,6 +44,12 @@ export default async function ClinicContractPage({
   const [clinic, settings] = await Promise.all([
     prisma.clinic.findUnique({
       where: { id },
+      include: {
+        contracts: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
     }),
     getOrCreateSettings(),
   ]);
@@ -53,47 +58,45 @@ export default async function ClinicContractPage({
     notFound();
   }
 
+  const previewBuilt = buildContractPayload(clinic, settings);
+  const latest = clinic.contracts[0] ?? null;
+
   return (
     <ContractClient
       clinic={{
         id: clinic.id,
         name: clinic.name,
-        legalName: clinic.legalName,
-        cnpj: clinic.cnpj,
-        address: clinic.address,
+        whatsapp: clinic.whatsapp,
         responsibleName: clinic.responsibleName,
-        legalRepName: clinic.legalRepName,
-        legalRepCpf: clinic.legalRepCpf,
-        subdomain: clinic.subdomain,
-        activeDoctors: clinic.activeDoctors,
-        planTier: clinic.planTier,
-        isFounder: clinic.isFounder,
-        setupFeeCents: clinic.setupFeeCents,
-        setupInstallments: clinic.setupInstallments,
-        monthlyFeeCents: clinic.monthlyFeeCents,
-        dueDay: clinic.dueDay,
-        startDate: clinic.startDate.toISOString(),
-        contractStartDate: clinic.contractStartDate
-          ? clinic.contractStartDate.toISOString()
-          : null,
-        fidelityMonths: clinic.fidelityMonths,
-        contractStatus: clinic.contractStatus,
-        infraType: clinic.infraType,
       }}
-      settings={{
-        companyName: settings.companyName,
-        companyLegalName: settings.companyLegalName,
-        companyCnpj: settings.companyCnpj,
-        companyAddress: settings.companyAddress,
-        companyRepName: settings.companyRepName,
-        companyRepCpf: settings.companyRepCpf,
-        contractCourt: settings.contractCourt,
-        defaultFidelityMonths: settings.defaultFidelityMonths,
-        defaultFidelityPenaltyPct: settings.defaultFidelityPenaltyPct,
-        defaultSuspensionDays: settings.defaultSuspensionDays,
-        supportChannel: settings.supportChannel,
-        supportHours: settings.supportHours,
-      }}
+      latestContract={
+        latest
+          ? {
+              id: latest.id,
+              token: latest.token,
+              status: latest.status,
+              contentSnapshot: latest.contentSnapshot,
+              documentHash: latest.documentHash,
+              planSnapshot: latest.planSnapshot,
+              monthlyFeeSnapshot: latest.monthlyFeeSnapshot,
+              setupFeeSnapshot: latest.setupFeeSnapshot,
+              setupInstallments: latest.setupInstallments,
+              isFounderSnapshot: latest.isFounderSnapshot,
+              dueDaySnapshot: latest.dueDaySnapshot,
+              infraSnapshot: latest.infraSnapshot,
+              fidelityMonths: latest.fidelityMonths,
+              startDate: latest.startDate.toISOString(),
+              endDate: latest.endDate.toISOString(),
+              signedAt: latest.signedAt ? latest.signedAt.toISOString() : null,
+              signerName: latest.signerName,
+              signerCpf: latest.signerCpf,
+              signerIp: latest.signerIp,
+              signerUserAgent: latest.signerUserAgent,
+              createdAt: latest.createdAt.toISOString(),
+            }
+          : null
+      }
+      missingFields={previewBuilt.missingFields}
     />
   );
 }

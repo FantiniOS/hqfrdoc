@@ -85,6 +85,7 @@ export async function PATCH(
         activeDoctors: data.activeDoctors,
         planTier: data.planTier ?? official.tier,
         isFounder: data.isFounder,
+        setupFee: Number((data.setupFeeCents / 100).toFixed(2)),
         setupFeeCents: data.setupFeeCents,
         setupInstallments: data.setupInstallments ?? null,
         monthlyFeeCents: data.monthlyFeeCents,
