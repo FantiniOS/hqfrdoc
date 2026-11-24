@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { BillingCycle } from "@prisma/client";
 import {
   CheckCircle2,
+  FileText,
   Loader2,
   Pencil,
   Percent,
@@ -39,26 +40,51 @@ interface HqSettingsState {
   pixKeyType: string;
   pixHolderName: string;
   companyName: string;
+  companyLegalName: string;
+  companyCnpj: string;
+  companyAddress: string;
+  companyRepName: string;
+  companyRepCpf: string;
+  contractCourt: string;
+  defaultFidelityMonths: number;
+  defaultFidelityPenaltyPct: number;
+  defaultSuspensionDays: number;
+  supportChannel: string;
+  supportHours: string;
 }
 
 const PIX_KEY_TYPES = ["CNPJ", "E-mail", "Telefone", "Chave Aleatória", "CPF"];
 
+const DEFAULT_SETTINGS: HqSettingsState = {
+  taxRatePercent: 6.0,
+  taxRegimeLabel: "Simples Nacional — Anexo III",
+  pixKey: "",
+  pixKeyType: "CNPJ",
+  pixHolderName: "FRdoc",
+  companyName: "FRdoc",
+  companyLegalName: "",
+  companyCnpj: "",
+  companyAddress: "",
+  companyRepName: "",
+  companyRepCpf: "",
+  contractCourt: "Contagem/MG",
+  defaultFidelityMonths: 12,
+  defaultFidelityPenaltyPct: 30,
+  defaultSuspensionDays: 15,
+  supportChannel: "WhatsApp",
+  supportHours: "Segunda a sexta, das 08h às 18h",
+};
+
 export function SettingsClient() {
   const [fixedCosts, setFixedCosts] = useState<FixedCostRow[]>([]);
   const [totalFixedCents, setTotalFixedCents] = useState(0);
-  const [settings, setSettings] = useState<HqSettingsState>({
-    taxRatePercent: 6.0,
-    taxRegimeLabel: "Simples Nacional — Anexo III",
-    pixKey: "",
-    pixKeyType: "CNPJ",
-    pixHolderName: "FRdoc",
-    companyName: "FRdoc",
-  });
+  const [settings, setSettings] = useState<HqSettingsState>(DEFAULT_SETTINGS);
   const [taxRateInput, setTaxRateInput] = useState("6,0");
 
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [savingContract, setSavingContract] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     text: string;
@@ -90,14 +116,25 @@ export function SettingsClient() {
       if (settingsRes.ok) {
         const settingsJson = await settingsRes.json();
         if (settingsJson.settings) {
+          const raw = settingsJson.settings;
           const s: HqSettingsState = {
-            taxRatePercent: settingsJson.settings.taxRatePercent ?? 6.0,
-            taxRegimeLabel:
-              settingsJson.settings.taxRegimeLabel ?? "Simples Nacional — Anexo III",
-            pixKey: settingsJson.settings.pixKey ?? "",
-            pixKeyType: settingsJson.settings.pixKeyType ?? "CNPJ",
-            pixHolderName: settingsJson.settings.pixHolderName ?? "FRdoc",
-            companyName: settingsJson.settings.companyName ?? "FRdoc",
+            taxRatePercent: raw.taxRatePercent ?? 6.0,
+            taxRegimeLabel: raw.taxRegimeLabel ?? "Simples Nacional — Anexo III",
+            pixKey: raw.pixKey ?? "",
+            pixKeyType: raw.pixKeyType ?? "CNPJ",
+            pixHolderName: raw.pixHolderName ?? "FRdoc",
+            companyName: raw.companyName ?? "FRdoc",
+            companyLegalName: raw.companyLegalName ?? "",
+            companyCnpj: raw.companyCnpj ?? "",
+            companyAddress: raw.companyAddress ?? "",
+            companyRepName: raw.companyRepName ?? "",
+            companyRepCpf: raw.companyRepCpf ?? "",
+            contractCourt: raw.contractCourt ?? "Contagem/MG",
+            defaultFidelityMonths: raw.defaultFidelityMonths ?? 12,
+            defaultFidelityPenaltyPct: raw.defaultFidelityPenaltyPct ?? 30,
+            defaultSuspensionDays: raw.defaultSuspensionDays ?? 15,
+            supportChannel: raw.supportChannel ?? "WhatsApp",
+            supportHours: raw.supportHours ?? "Segunda a sexta, das 08h às 18h",
           };
           setSettings(s);
           setTaxRateInput(String(s.taxRatePercent).replace(".", ","));
@@ -225,9 +262,12 @@ export function SettingsClient() {
     setTaxRateInput(String(rate).replace(".", ","));
   }
 
-  async function handleSaveSettings(e: React.FormEvent) {
-    e.preventDefault();
-    setSavingSettings(true);
+  async function persistAllSettings(
+    section: "fiscal" | "contract",
+    successMessage: string
+  ) {
+    if (section === "fiscal") setSavingSettings(true);
+    else setSavingContract(true);
     setFeedback(null);
 
     const parsedRate = Number.parseFloat(taxRateInput.replace(",", "."));
@@ -252,7 +292,7 @@ export function SettingsClient() {
         setSettings((prev) => ({ ...prev, taxRatePercent: safeRate }));
         setFeedback({
           type: "success",
-          text: "Configurações fiscais e Chave PIX salvas com sucesso.",
+          text: successMessage,
         });
       }
     } catch {
@@ -261,8 +301,25 @@ export function SettingsClient() {
         text: "Falha de comunicação ao salvar configurações.",
       });
     } finally {
-      setSavingSettings(false);
+      if (section === "fiscal") setSavingSettings(false);
+      else setSavingContract(false);
     }
+  }
+
+  async function handleSaveSettings(e: React.FormEvent) {
+    e.preventDefault();
+    await persistAllSettings(
+      "fiscal",
+      "Configurações fiscais e Chave PIX salvas com sucesso."
+    );
+  }
+
+  async function handleSaveContractSettings(e: React.FormEvent) {
+    e.preventDefault();
+    await persistAllSettings(
+      "contract",
+      "Dados da Contratada e regras contratuais salvos com sucesso."
+    );
   }
 
   return (
@@ -273,7 +330,7 @@ export function SettingsClient() {
           Custos Fixos & Configurações da FRdoc
         </h1>
         <p className="mt-0.5 text-sm text-slate-600">
-          Despesas fixas da operação, alíquota tributária do painel e dados oficiais do PIX para WhatsApp.
+          Despesas fixas da operação, alíquota tributária, Chave PIX e parâmetros oficiais de contratos.
         </p>
       </div>
 
@@ -650,11 +707,270 @@ export function SettingsClient() {
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              Salvar Configurações
+              Salvar Configurações Fiscais e PIX
             </button>
           </form>
         </section>
       </div>
+
+      {/* Seção: Dados da Contratada & Regras de Contrato */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+        <form onSubmit={handleSaveContractSettings} className="space-y-5">
+          <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600">
+                <FileText className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Dados da Contratada & Regras de Contrato
+                </h2>
+                <p className="text-xs text-slate-600">
+                  Preenchidos automaticamente na geração dos contratos SaaS FRdoc 2.0 e anexos (LGPD).
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingContract}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {savingContract ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              Salvar Dados Contratuais
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Bloco Esquerdo: Qualificação da Contratada */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                Qualificação da Contratada (FRdoc)
+              </h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    Razão Social da Contratada
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.companyLegalName}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        companyLegalName: e.target.value,
+                      }))
+                    }
+                    placeholder="Ex.: FRdoc Tecnologia e Sistemas Médicos Ltda"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    CNPJ da Contratada
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.companyCnpj}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        companyCnpj: e.target.value,
+                      }))
+                    }
+                    placeholder="00.000.000/0001-00"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    Foro do Contrato
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={settings.contractCourt}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        contractCourt: e.target.value,
+                      }))
+                    }
+                    placeholder="Contagem/MG"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    Endereço Completo da Sede
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.companyAddress}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        companyAddress: e.target.value,
+                      }))
+                    }
+                    placeholder="Rua, nº, complemento, bairro, cidade/UF, CEP"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    Representante Legal
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.companyRepName}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        companyRepName: e.target.value,
+                      }))
+                    }
+                    placeholder="Nome completo do sócio administrador"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    CPF do Representante
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.companyRepCpf}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        companyRepCpf: e.target.value,
+                      }))
+                    }
+                    placeholder="000.000.000-00"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bloco Direito: Parâmetros Comerciais & Suporte */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                Padrões de Fidelidade, Inadimplência e Suporte
+              </h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    Fidelidade Padrão (meses)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={60}
+                    required
+                    value={settings.defaultFidelityMonths}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        defaultFidelityMonths: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    Multa Rescisória (%)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    required
+                    value={settings.defaultFidelityPenaltyPct}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        defaultFidelityPenaltyPct: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    Suspensão (dias atraso)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={90}
+                    required
+                    value={settings.defaultSuspensionDays}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        defaultSuspensionDays: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    Canal Oficial de Suporte Técnico
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={settings.supportChannel}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        supportChannel: e.target.value,
+                      }))
+                    }
+                    placeholder="WhatsApp"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
+                    Horário de Atendimento do Suporte
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={settings.supportHours}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        supportHours: e.target.value,
+                      }))
+                    }
+                    placeholder="Segunda a sexta, das 08h às 18h"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </section>
 
       {/* Modal de Custo Fixo */}
       {costModalOpen && (

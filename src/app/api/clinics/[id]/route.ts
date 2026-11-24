@@ -6,10 +6,19 @@ import { normalizeSubdomain, parseDateInputToUTC } from "@/lib/format";
 import { calculateOfficialPricing } from "@/lib/pricing";
 import { prisma } from "@/lib/prisma";
 
+const optionalPositiveInt = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+  z.number().int().min(1).max(60).nullable()
+);
+
 const clinicUpdateSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome da clínica."),
-  cnpj: z.string().trim().optional().nullable(),
+  legalName: z.string().trim().max(200).optional().nullable(),
+  cnpj: z.string().trim().max(32).optional().nullable(),
+  address: z.string().trim().max(300).optional().nullable(),
   responsibleName: z.string().trim().min(2, "Informe o médico ou responsável."),
+  legalRepName: z.string().trim().max(160).optional().nullable(),
+  legalRepCpf: z.string().trim().max(24).optional().nullable(),
   whatsapp: z.string().trim().min(8, "Informe o WhatsApp de contato."),
   email: z
     .string()
@@ -24,10 +33,14 @@ const clinicUpdateSchema = z.object({
   planTier: z.enum(["SMALL", "MEDIUM", "LARGE", "ENTERPRISE"]).optional(),
   isFounder: z.boolean().default(false),
   setupFeeCents: z.coerce.number().int().min(0),
+  setupInstallments: optionalPositiveInt.optional(),
   monthlyFeeCents: z.coerce.number().int().min(0),
   dueDay: z.coerce.number().int().min(1).max(28),
   startDate: z.string().min(8),
   nextAdjustmentDate: z.string().optional().nullable(),
+  contractStartDate: z.string().optional().nullable(),
+  fidelityMonths: optionalPositiveInt.optional(),
+  contractStatus: z.enum(["DRAFT", "SENT", "SIGNED"]).default("DRAFT"),
   infraType: z.enum(["ORACLE_ALWAYS_FREE", "ORACLE_DEDICATED_VM", "PAID_DEDICATED_DB"]),
   infraCostCents: z.coerce.number().int().min(0),
   technicalNotes: z.string().trim().optional().nullable(),
@@ -59,8 +72,12 @@ export async function PATCH(
       where: { id },
       data: {
         name: data.name,
+        legalName: data.legalName?.trim() || null,
         cnpj: data.cnpj?.trim() || null,
+        address: data.address?.trim() || null,
         responsibleName: data.responsibleName,
+        legalRepName: data.legalRepName?.trim() || null,
+        legalRepCpf: data.legalRepCpf?.trim() || null,
         whatsapp: data.whatsapp,
         email: data.email?.trim() || null,
         subdomain: normalizeSubdomain(data.subdomain),
@@ -69,12 +86,18 @@ export async function PATCH(
         planTier: data.planTier ?? official.tier,
         isFounder: data.isFounder,
         setupFeeCents: data.setupFeeCents,
+        setupInstallments: data.setupInstallments ?? null,
         monthlyFeeCents: data.monthlyFeeCents,
         dueDay: data.dueDay,
         startDate: parseDateInputToUTC(data.startDate),
         nextAdjustmentDate: data.nextAdjustmentDate?.trim()
           ? parseDateInputToUTC(data.nextAdjustmentDate)
           : null,
+        contractStartDate: data.contractStartDate?.trim()
+          ? parseDateInputToUTC(data.contractStartDate)
+          : null,
+        fidelityMonths: data.fidelityMonths ?? null,
+        contractStatus: data.contractStatus,
         infraType: data.infraType,
         infraCostCents: data.infraCostCents,
         technicalNotes: data.technicalNotes?.trim() || null,

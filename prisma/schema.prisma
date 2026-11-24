@@ -59,8 +59,12 @@ enum BillingCycle {
 model Clinic {
   id                 String       @id @default(cuid())
   name               String
+  legalName          String?
   cnpj               String?
+  address            String?
   responsibleName    String
+  legalRepName       String?
+  legalRepCpf        String?
   whatsapp           String
   email              String?
   subdomain          String?      @unique
@@ -70,10 +74,14 @@ model Clinic {
   planTier           PlanTier     @default(SMALL)
   isFounder          Boolean      @default(false)
   setupFeeCents      Int          @default(180000)
+  setupInstallments  Int?
   monthlyFeeCents    Int          @default(79000)
   dueDay             Int          @default(10)
   startDate          DateTime     @default(now())
   nextAdjustmentDate DateTime?
+  contractStartDate  DateTime?
+  fidelityMonths     Int?
+  contractStatus     String       @default("DRAFT") // DRAFT | SENT | SIGNED
 
   infraType          InfraType    @default(ORACLE_ALWAYS_FREE)
   infraCostCents     Int          @default(0)
@@ -87,6 +95,7 @@ model Clinic {
   @@index([status])
   @@index([planTier])
   @@index([name])
+  @@index([contractStatus])
 }
 
 model Invoice {
@@ -133,12 +142,26 @@ model FixedCost {
 }
 
 model HqSettings {
-  id             String   @id @default("default")
-  taxRatePercent Float    @default(6.0)
-  taxRegimeLabel String   @default("Simples Nacional — Anexo III")
-  pixKey         String   @default("")
-  pixKeyType     String   @default("CNPJ")
-  pixHolderName  String   @default("FRdoc")
-  companyName    String   @default("FRdoc")
-  updatedAt      DateTime @updatedAt
+  id                        String   @id @default("default")
+  taxRatePercent            Float    @default(6.0)
+  taxRegimeLabel            String   @default("Simples Nacional — Anexo III")
+  pixKey                    String   @default("")
+  pixKeyType                String   @default("CNPJ")
+  pixHolderName             String   @default("FRdoc")
+  companyName               String   @default("FRdoc")
+
+  // Dados da Contratada & Regras Padrão de Contrato
+  companyLegalName          String?
+  companyCnpj               String?
+  companyAddress            String?
+  companyRepName            String?
+  companyRepCpf             String?
+  contractCourt             String   @default("Contagem/MG")
+  defaultFidelityMonths     Int      @default(12)
+  defaultFidelityPenaltyPct Int      @default(30)
+  defaultSuspensionDays     Int      @default(15)
+  supportChannel            String   @default("WhatsApp")
+  supportHours              String   @default("Segunda a sexta, das 08h às 18h")
+
+  updatedAt                 DateTime @updatedAt
 }

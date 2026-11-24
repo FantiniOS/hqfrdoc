@@ -42,8 +42,8 @@ export function HqShell({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-2xs backdrop-blur-md">
+    <div className="min-h-screen bg-slate-50 text-slate-900 print:min-h-0 print:bg-white">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-2xs backdrop-blur-md print:hidden">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5">
@@ -69,7 +69,10 @@ export function HqShell({
               const active =
                 item.href === "/"
                   ? pathname === "/"
-                  : pathname.startsWith(item.href);
+                  : item.href === "/clinicas"
+                    ? pathname.startsWith("/clinicas") ||
+                      pathname.startsWith("/clinics")
+                    : pathname.startsWith(item.href);
               const Icon = item.icon;
               return (
                 <Link
@@ -119,7 +122,10 @@ export function HqShell({
               const active =
                 item.href === "/"
                   ? pathname === "/"
-                  : pathname.startsWith(item.href);
+                  : item.href === "/clinicas"
+                    ? pathname.startsWith("/clinicas") ||
+                      pathname.startsWith("/clinics")
+                    : pathname.startsWith(item.href);
               const Icon = item.icon;
               return (
                 <Link
@@ -142,7 +148,7 @@ export function HqShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 print:max-w-none print:p-0">
         {children}
       </main>
     </div>

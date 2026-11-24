@@ -234,3 +234,22 @@ export function addOneYearUTC(date: Date): Date {
     Date.UTC(date.getUTCFullYear() + 1, date.getUTCMonth(), date.getUTCDate(), 12, 0, 0)
   );
 }
+
+export function addMonthsUTC(date: Date | string, months: number): Date {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const year = d.getUTCFullYear();
+  const month = d.getUTCMonth() + months;
+  const day = d.getUTCDate();
+  const targetLastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(year, month, Math.min(day, targetLastDay), 12, 0, 0));
+}
+
+export function formatDateLongBR(date: Date | string | null | undefined): string {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return "";
+  const day = d.getUTCDate();
+  const monthName = MONTH_NAMES_FULL[d.getUTCMonth()]?.toLowerCase() ?? "";
+  const year = d.getUTCFullYear();
+  return `${day} de ${monthName} de ${year}`;
+}

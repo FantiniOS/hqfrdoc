@@ -44,3 +44,29 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Regras de impressão A4 para exportação de contratos em PDF */
+@page {
+  size: A4;
+  margin: 18mm 18mm 20mm 18mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .contract-page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .contract-avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}

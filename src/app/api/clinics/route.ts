@@ -7,15 +7,25 @@ import {
   normalizeSubdomain,
   parseDateInputToUTC,
 } from "@/lib/format";
+import { getOrCreateSettings } from "@/lib/hq-data";
 import { calculateOfficialPricing } from "@/lib/pricing";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const optionalPositiveInt = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+  z.number().int().min(1).max(60).nullable()
+);
+
 const clinicPayloadSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome da clínica."),
-  cnpj: z.string().trim().optional().nullable(),
+  legalName: z.string().trim().max(200).optional().nullable(),
+  cnpj: z.string().trim().max(32).optional().nullable(),
+  address: z.string().trim().max(300).optional().nullable(),
   responsibleName: z.string().trim().min(2, "Informe o médico ou responsável."),
+  legalRepName: z.string().trim().max(160).optional().nullable(),
+  legalRepCpf: z.string().trim().max(24).optional().nullable(),
   whatsapp: z.string().trim().min(8, "Informe o WhatsApp de contato."),
   email: z
     .string()
@@ -32,10 +42,14 @@ const clinicPayloadSchema = z.object({
   planTier: z.enum(["SMALL", "MEDIUM", "LARGE", "ENTERPRISE"]).optional(),
   isFounder: z.boolean().default(false),
   setupFeeCents: z.coerce.number().int().min(0),
+  setupInstallments: optionalPositiveInt.optional(),
   monthlyFeeCents: z.coerce.number().int().min(0),
   dueDay: z.coerce.number().int().min(1, "Dia entre 1 e 28.").max(28, "Dia entre 1 e 28."),
   startDate: z.string().min(8, "Informe a data de início."),
   nextAdjustmentDate: z.string().optional().nullable(),
+  contractStartDate: z.string().optional().nullable(),
+  fidelityMonths: optionalPositiveInt.optional(),
+  contractStatus: z.enum(["DRAFT", "SENT", "SIGNED"]).default("DRAFT"),
   infraType: z
     .enum(["ORACLE_ALWAYS_FREE", "ORACLE_DEDICATED_VM", "PAID_DEDICATED_DB"])
     .default("ORACLE_ALWAYS_FREE"),
@@ -64,6 +78,7 @@ export async function GET(request: Request) {
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
+        { legalName: { contains: search, mode: "insensitive" } },
         { responsibleName: { contains: search, mode: "insensitive" } },
         { subdomain: { contains: search, mode: "insensitive" } },
         { cnpj: { contains: search, mode: "insensitive" } },
@@ -71,13 +86,19 @@ export async function GET(request: Request) {
       ];
     }
 
-    const clinics = await prisma.clinic.findMany({
-      where,
-      orderBy: [{ createdAt: "desc" }],
-    });
+    const [clinics, settings] = await Promise.all([
+      prisma.clinic.findMany({
+        where,
+        orderBy: [{ createdAt: "desc" }],
+      }),
+      getOrCreateSettings(),
+    ]);
 
     return NextResponse.json(
-      { clinics },
+      {
+        clinics,
+        defaultFidelityMonths: settings.defaultFidelityMonths,
+      },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (err) {
@@ -110,12 +131,19 @@ export async function POST(request: Request) {
     const nextAdjustmentDate = data.nextAdjustmentDate?.trim()
       ? parseDateInputToUTC(data.nextAdjustmentDate)
       : addOneYearUTC(startDate);
+    const contractStartDate = data.contractStartDate?.trim()
+      ? parseDateInputToUTC(data.contractStartDate)
+      : null;
 
     const clinic = await prisma.clinic.create({
       data: {
         name: data.name,
+        legalName: data.legalName?.trim() || null,
         cnpj: data.cnpj?.trim() || null,
+        address: data.address?.trim() || null,
         responsibleName: data.responsibleName,
+        legalRepName: data.legalRepName?.trim() || null,
+        legalRepCpf: data.legalRepCpf?.trim() || null,
         whatsapp: data.whatsapp,
         email: data.email?.trim() || null,
         subdomain: normalizeSubdomain(data.subdomain),
@@ -124,10 +152,14 @@ export async function POST(request: Request) {
         planTier: data.planTier ?? official.tier,
         isFounder: data.isFounder,
         setupFeeCents: data.setupFeeCents,
+        setupInstallments: data.setupInstallments ?? null,
         monthlyFeeCents: data.monthlyFeeCents,
         dueDay: data.dueDay,
         startDate,
         nextAdjustmentDate,
+        contractStartDate,
+        fidelityMonths: data.fidelityMonths ?? null,
+        contractStatus: data.contractStatus,
         infraType: data.infraType,
         infraCostCents: data.infraCostCents,
         technicalNotes: data.technicalNotes?.trim() || null,

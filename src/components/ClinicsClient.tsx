@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ClinicStatus } from "@prisma/client";
 import {
   AlertTriangle,
   Building2,
   ExternalLink,
+  FileText,
   Loader2,
   Pencil,
   Plus,
@@ -15,6 +17,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { ClinicModal, type ClinicRecord } from "@/components/ClinicModal";
+import {
+  CONTRACT_STATUS_META,
+  getFidelityEndDate,
+  normalizeContractStatus,
+} from "@/lib/contract";
 import { formatBRL, formatDateBR, getSubdomainUrl } from "@/lib/format";
 import {
   CLINIC_STATUS_META,
@@ -34,6 +41,7 @@ const STATUS_FILTERS: Array<{ value: "ALL" | ClinicStatus; label: string }> = [
 
 export function ClinicsClient() {
   const [clinics, setClinics] = useState<ClinicRecord[]>([]);
+  const [defaultFidelityMonths, setDefaultFidelityMonths] = useState(12);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -54,6 +62,9 @@ export function ClinicsClient() {
       }
       const json = await res.json();
       setClinics(json.clinics ?? []);
+      if (typeof json.defaultFidelityMonths === "number") {
+        setDefaultFidelityMonths(json.defaultFidelityMonths);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar clínicas.");
     } finally {
@@ -72,6 +83,7 @@ export function ClinicsClient() {
       if (!q) return true;
       return (
         c.name.toLowerCase().includes(q) ||
+        (c.legalName ?? "").toLowerCase().includes(q) ||
         c.responsibleName.toLowerCase().includes(q) ||
         (c.subdomain ?? "").toLowerCase().includes(q) ||
         (c.cnpj ?? "").toLowerCase().includes(q)
@@ -122,7 +134,7 @@ export function ClinicsClient() {
             Clínicas Clientes
           </h1>
           <p className="mt-0.5 text-sm text-slate-600">
-            Carteira ativa, faixas FRdoc 2.0, reajustes IPCA e custo real de nuvem.
+            Carteira ativa, faixas FRdoc 2.0, contratos SaaS, reajustes IPCA e custo real de nuvem.
           </p>
         </div>
 
@@ -183,7 +195,7 @@ export function ClinicsClient() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar clínica, médico, CNPJ ou subdomínio..."
+            placeholder="Buscar clínica, razão social, médico, CNPJ ou subdomínio..."
             className="w-full rounded-xl border border-slate-300 bg-white py-2 pr-3 pl-9 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
           />
         </div>
@@ -218,7 +230,7 @@ export function ClinicsClient() {
       {/* Tabela */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
                 <th className="px-4 py-3">Clínica / Subdomínio</th>
@@ -226,7 +238,7 @@ export function ClinicsClient() {
                 <th className="px-4 py-3">Plano & Médicos</th>
                 <th className="px-4 py-3">Mensalidade</th>
                 <th className="px-4 py-3">Infraestrutura</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Status & Contrato</th>
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
@@ -263,6 +275,17 @@ export function ClinicsClient() {
                   );
                   const subdomainUrl = getSubdomainUrl(clinic.subdomain);
 
+                  const contractStatusKey = normalizeContractStatus(
+                    clinic.contractStatus
+                  );
+                  const contractMeta = CONTRACT_STATUS_META[contractStatusKey];
+                  const fidelityMonths =
+                    clinic.fidelityMonths ?? defaultFidelityMonths;
+                  const fidelityEndDate = getFidelityEndDate(
+                    clinic.contractStartDate,
+                    fidelityMonths
+                  );
+
                   return (
                     <tr
                       key={clinic.id}
@@ -270,7 +293,7 @@ export function ClinicsClient() {
                     >
                       {/* Clínica & Subdomínio */}
                       <td className="px-4 py-3.5 align-top">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-slate-900">
                             {clinic.name}
                           </span>
@@ -365,21 +388,49 @@ export function ClinicsClient() {
                         </p>
                       </td>
 
-                      {/* Status */}
+                      {/* Status & Contrato */}
                       <td className="px-4 py-3.5 align-top">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.badgeClass}`}
-                        >
+                        <div className="flex flex-col items-start gap-1.5">
                           <span
-                            className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClass}`}
-                          />
-                          {statusMeta.label}
-                        </span>
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.badgeClass}`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClass}`}
+                            />
+                            {statusMeta.label}
+                          </span>
+
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium ${contractMeta.badgeClass}`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${contractMeta.dotClass}`}
+                            />
+                            Contrato: {contractMeta.label}
+                          </span>
+
+                          {fidelityEndDate && (
+                            <span className="text-[11px] text-slate-500">
+                              Fidelidade até{" "}
+                              <strong className="font-mono-num font-medium text-slate-700">
+                                {formatDateBR(fidelityEndDate)}
+                              </strong>
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Ações */}
                       <td className="px-4 py-3.5 text-right align-top">
-                        <div className="inline-flex items-center gap-1">
+                        <div className="inline-flex items-center justify-end gap-1.5">
+                          <Link
+                            href={`/clinics/${clinic.id}/contract`}
+                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                            Gerar Contrato
+                          </Link>
+
                           <button
                             type="button"
                             onClick={() => {
@@ -391,6 +442,7 @@ export function ClinicsClient() {
                             <Pencil className="h-3.5 w-3.5 text-slate-500" />
                             Editar
                           </button>
+
                           <button
                             type="button"
                             onClick={() => void handleDelete(clinic)}
@@ -418,6 +470,7 @@ export function ClinicsClient() {
       <ClinicModal
         open={modalOpen}
         clinic={editingClinic}
+        defaultFidelityMonths={defaultFidelityMonths}
         onClose={() => setModalOpen(false)}
         onSaved={() => void loadClinics()}
       />
