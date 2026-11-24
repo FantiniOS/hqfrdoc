@@ -140,10 +140,10 @@ export function OverviewClient() {
       {/* Cabeçalho + Seletor de Mês/Ano */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-white">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
             Visão Geral Executiva
           </h1>
-          <p className="mt-0.5 text-sm text-slate-400">
+          <p className="mt-0.5 text-sm text-slate-600">
             Faturamento, custos operacionais, impostos e caixa real da FRdoc.
           </p>
         </div>
@@ -155,7 +155,7 @@ export function OverviewClient() {
             onClick={() => void loadDashboard(competence)}
             disabled={loading}
             aria-label="Atualizar dados"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-[#0f1623] text-slate-400 transition hover:border-slate-700 hover:text-white disabled:opacity-50"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-2xs transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -163,7 +163,7 @@ export function OverviewClient() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
           {error}
         </div>
       )}
@@ -171,44 +171,44 @@ export function OverviewClient() {
       {/* 5 Cards de KPI */}
       <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
         {/* 1. MRR */}
-        <div className="rounded-2xl border border-slate-800/90 bg-[#0f1623] p-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">
+            <span className="text-xs font-medium text-slate-600">
               MRR (Previsto)
             </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
               <TrendingUp className="h-3.5 w-3.5" />
             </span>
           </div>
-          <p className="mt-3 font-mono-num text-xl font-semibold tracking-tight text-white">
+          <p className="mt-3 font-mono-num text-xl font-semibold tracking-tight text-slate-900">
             {kpis ? formatBRL(kpis.mrrCents) : "—"}
           </p>
-          <p className="mt-1.5 text-xs text-slate-400">
+          <p className="mt-1.5 text-xs text-slate-600">
             {kpis
               ? `${kpis.activeClinicsCount} ativa(s) · ${kpis.activeDoctorsTotal} médico(s)`
               : "Carregando..."}
           </p>
           {kpis && kpis.delinquentClinicsCount > 0 && (
-            <p className="mt-1 text-[11px] text-rose-400">
+            <p className="mt-1 text-[11px] font-medium text-rose-600">
               +{kpis.delinquentClinicsCount} inadimplente(s) na carteira
             </p>
           )}
         </div>
 
         {/* 2. Recebido no Mês */}
-        <div className="rounded-2xl border border-emerald-500/20 bg-[#0f1623] p-4">
+        <div className="rounded-2xl border border-emerald-200/80 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">
+            <span className="text-xs font-medium text-slate-600">
               Recebido no Mês
             </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/12 text-emerald-400">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
               <DollarSign className="h-3.5 w-3.5" />
             </span>
           </div>
-          <p className="mt-3 font-mono-num text-xl font-semibold tracking-tight text-emerald-400">
+          <p className="mt-3 font-mono-num text-xl font-semibold tracking-tight text-emerald-600">
             {kpis ? formatBRL(kpis.receivedCents) : "—"}
           </p>
-          <p className="mt-1.5 text-xs text-slate-400">
+          <p className="mt-1.5 text-xs text-slate-600">
             {kpis
               ? kpis.receivedExtrasCents > 0
                 ? `${kpis.paidCount} paga(s) · Extras: ${formatBRL(kpis.receivedExtrasCents)}`
@@ -219,21 +219,21 @@ export function OverviewClient() {
 
         {/* 3. A Receber / Em Atraso */}
         <div
-          className={`rounded-2xl border p-4 transition ${
+          className={`rounded-2xl border p-4 shadow-xs transition ${
             hasOverdue
-              ? "border-rose-500/45 bg-rose-950/15"
-              : "border-slate-800/90 bg-[#0f1623]"
+              ? "border-rose-200 bg-rose-50/70"
+              : "border-slate-200 bg-white"
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">
+            <span className="text-xs font-medium text-slate-600">
               A Receber / Atraso
             </span>
             <span
               className={`flex h-7 w-7 items-center justify-center rounded-lg ${
                 hasOverdue
-                  ? "bg-rose-500/20 text-rose-400"
-                  : "bg-amber-500/10 text-amber-400"
+                  ? "bg-rose-100 text-rose-600"
+                  : "bg-amber-50 text-amber-600"
               }`}
             >
               {hasOverdue ? (
@@ -245,46 +245,49 @@ export function OverviewClient() {
           </div>
           <p
             className={`mt-3 font-mono-num text-xl font-semibold tracking-tight ${
-              hasOverdue ? "text-rose-300" : "text-white"
+              hasOverdue ? "text-rose-700" : "text-slate-900"
             }`}
           >
             {kpis ? formatBRL(kpis.receivableTotalCents) : "—"}
           </p>
           {kpis ? (
             hasOverdue ? (
-              <p className="mt-1.5 text-xs font-medium text-rose-400">
+              <p className="mt-1.5 text-xs font-semibold text-rose-600">
                 {kpis.overdueCount} vencida(s): {formatBRL(kpis.overdueCents)}
               </p>
             ) : (
-              <p className="mt-1.5 text-xs text-slate-400">
+              <p className="mt-1.5 text-xs text-slate-600">
                 {kpis.openMonthCount} em aberto · Sem atrasos
               </p>
             )
           ) : (
-            <p className="mt-1.5 text-xs text-slate-400">Carregando...</p>
+            <p className="mt-1.5 text-xs text-slate-500">Carregando...</p>
           )}
         </div>
 
         {/* 4. Custos Totais + Impostos */}
-        <div className="rounded-2xl border border-slate-800/90 bg-[#0f1623] p-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">
+            <span className="text-xs font-medium text-slate-600">
               Custos + Impostos
             </span>
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/12 text-amber-400">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
               <Wallet className="h-3.5 w-3.5" />
             </span>
           </div>
-          <p className="mt-3 font-mono-num text-xl font-semibold tracking-tight text-amber-300">
+          <p className="mt-3 font-mono-num text-xl font-semibold tracking-tight text-amber-700">
             {kpis ? formatBRL(kpis.totalCostsAndTaxesCents) : "—"}
           </p>
           {kpis ? (
-            <p className="mt-1.5 truncate text-[11px] text-slate-400" title={`Infra: ${formatBRL(kpis.clinicInfraCents)} | Fixos: ${formatBRL(kpis.fixedCostsCents)} | Imposto (${formatPercent(kpis.taxRatePercent)}): ${formatBRL(kpis.taxCents)}`}>
+            <p
+              className="mt-1.5 truncate text-[11px] text-slate-600"
+              title={`Infra: ${formatBRL(kpis.clinicInfraCents)} | Fixos: ${formatBRL(kpis.fixedCostsCents)} | Imposto (${formatPercent(kpis.taxRatePercent)}): ${formatBRL(kpis.taxCents)}`}
+            >
               Infra {formatBRL(kpis.clinicInfraCents)} · Fixos{" "}
               {formatBRL(kpis.fixedCostsCents)}
             </p>
           ) : (
-            <p className="mt-1.5 text-xs text-slate-400">Carregando...</p>
+            <p className="mt-1.5 text-xs text-slate-500">Carregando...</p>
           )}
           {kpis && (
             <p className="mt-0.5 text-[11px] text-slate-500">
@@ -296,22 +299,22 @@ export function OverviewClient() {
 
         {/* 5. Lucro Líquido Real */}
         <div
-          className={`rounded-2xl border p-4 ${
+          className={`rounded-2xl border p-4 shadow-xs ${
             isProfitPositive
-              ? "border-emerald-500/35 bg-emerald-950/15"
-              : "border-rose-500/35 bg-rose-950/15"
+              ? "border-emerald-200 bg-emerald-50/50"
+              : "border-rose-200 bg-rose-50/60"
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-300">
+            <span className="text-xs font-medium text-slate-700">
               Lucro Líquido Real
             </span>
             {kpis && (
               <span
-                className={`rounded-md px-1.5 py-0.5 font-mono-num text-[11px] font-semibold ${
+                className={`rounded-md border px-1.5 py-0.5 font-mono-num text-[11px] font-semibold ${
                   isProfitPositive
-                    ? "bg-emerald-500/15 text-emerald-300"
-                    : "bg-rose-500/15 text-rose-300"
+                    ? "border-emerald-200 bg-emerald-100/80 text-emerald-800"
+                    : "border-rose-200 bg-rose-100/80 text-rose-800"
                 }`}
               >
                 {formatPercent(kpis.profitMarginPercent)}
@@ -320,12 +323,12 @@ export function OverviewClient() {
           </div>
           <p
             className={`mt-3 font-mono-num text-xl font-semibold tracking-tight ${
-              isProfitPositive ? "text-emerald-400" : "text-rose-400"
+              isProfitPositive ? "text-emerald-700" : "text-rose-700"
             }`}
           >
             {kpis ? formatBRL(kpis.netProfitCents) : "—"}
           </p>
-          <p className="mt-1.5 text-xs text-slate-400">
+          <p className="mt-1.5 text-xs text-slate-600">
             Sobra efetiva em caixa no mês
           </p>
         </div>
@@ -334,19 +337,19 @@ export function OverviewClient() {
       {/* Grid Principal: Gráfico (7 cols) + Ação Rápida (5 cols) */}
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         {/* Gráfico Recharts 6 meses */}
-        <div className="rounded-2xl border border-slate-800/90 bg-[#0f1623] p-5 lg:col-span-7">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs lg:col-span-7">
           <div className="mb-4 flex items-center justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold text-white">
+              <h2 className="text-sm font-semibold text-slate-900">
                 Evolução Financeira (Últimos 6 Meses)
               </h2>
-              <p className="mt-0.5 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-600">
                 Faturamento recebido vs. custos + impostos vs. lucro líquido real
               </p>
             </div>
             <Link
               href="/configuracoes"
-              className="hidden items-center gap-1 rounded-lg border border-slate-800 bg-[#090d16] px-2.5 py-1 text-[11px] font-medium text-slate-400 transition hover:border-slate-700 hover:text-slate-200 sm:inline-flex"
+              className="hidden items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 sm:inline-flex"
             >
               Alíquota: {kpis ? formatPercent(kpis.taxRatePercent) : "—"}
               <ArrowUpRight className="h-3 w-3" />
@@ -364,29 +367,32 @@ export function OverviewClient() {
         </div>
 
         {/* Painel de Ação Rápida */}
-        <div className="flex flex-col rounded-2xl border border-slate-800/90 bg-[#0f1623] p-5 lg:col-span-5">
+        <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-xs lg:col-span-5">
           <div className="mb-4 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-amber-400" />
+              <Zap className="h-4 w-4 text-amber-500" />
               <div>
-                <h2 className="text-sm font-semibold text-white">
+                <h2 className="text-sm font-semibold text-slate-900">
                   Painel de Ação Rápida
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   Vencidas ou vencendo nos próximos 5 dias
                 </p>
               </div>
             </div>
             <Link
               href="/pagamentos"
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 transition hover:text-emerald-300"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 transition hover:text-emerald-700"
             >
               Ver todas
               <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </div>
 
-          <div className="flex-1 space-y-2.5 overflow-y-auto pr-1" style={{ maxHeight: "310px" }}>
+          <div
+            className="flex-1 space-y-2.5 overflow-y-auto pr-1"
+            style={{ maxHeight: "310px" }}
+          >
             {loading && !data ? (
               <div className="flex h-48 items-center justify-center text-xs text-slate-500">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -413,8 +419,8 @@ export function OverviewClient() {
                     key={inv.id}
                     className={`rounded-xl border p-3 transition ${
                       isOverdue
-                        ? "border-rose-500/35 bg-rose-950/20"
-                        : "border-amber-500/25 bg-amber-950/10"
+                        ? "border-rose-200 bg-rose-50/70"
+                        : "border-amber-200 bg-amber-50/60"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -422,24 +428,24 @@ export function OverviewClient() {
                         <div className="flex items-center gap-2">
                           <span
                             className={`h-2 w-2 shrink-0 rounded-full ${
-                              isOverdue ? "bg-rose-400" : "bg-amber-400"
+                              isOverdue ? "bg-rose-500" : "bg-amber-500"
                             }`}
                           />
-                          <p className="truncate text-sm font-medium text-white">
+                          <p className="truncate text-sm font-semibold text-slate-900">
                             {inv.clinicName}
                           </p>
                         </div>
-                        <p className="mt-0.5 truncate text-xs text-slate-400">
+                        <p className="mt-0.5 truncate text-xs text-slate-600">
                           {inv.description} · Venc. {formatDateBR(inv.dueDate)}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="font-mono-num text-sm font-semibold text-white">
+                        <p className="font-mono-num text-sm font-semibold text-slate-900">
                           {formatBRL(inv.amountCents)}
                         </p>
                         <p
-                          className={`text-[11px] font-medium ${
-                            isOverdue ? "text-rose-400" : "text-amber-300"
+                          className={`text-[11px] font-semibold ${
+                            isOverdue ? "text-rose-700" : "text-amber-700"
                           }`}
                         >
                           {isOverdue
@@ -463,7 +469,7 @@ export function OverviewClient() {
                             dueDate: inv.dueDate,
                           })
                         }
-                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-2.5 py-1.5 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/30 transition hover:bg-emerald-500/25"
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         Dar Baixa
@@ -474,17 +480,17 @@ export function OverviewClient() {
                           href={waUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ring-1 transition ${
+                          className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
                             isOverdue
-                              ? "bg-rose-500/15 text-rose-200 ring-rose-500/35 hover:bg-rose-500/25"
-                              : "bg-slate-800/80 text-slate-200 ring-slate-700 hover:bg-slate-700"
+                              ? "border-rose-300 bg-white text-rose-700 hover:bg-rose-100/70"
+                              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
                           }`}
                         >
                           <MessageCircle className="h-3.5 w-3.5" />
                           Cobrar WhatsApp
                         </a>
                       ) : (
-                        <span className="inline-flex flex-1 items-center justify-center rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs text-slate-500">
+                        <span className="inline-flex flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-400">
                           Sem WhatsApp
                         </span>
                       )}
@@ -493,9 +499,9 @@ export function OverviewClient() {
                 );
               })
             ) : (
-              <div className="flex h-52 flex-col items-center justify-center rounded-xl border border-dashed border-slate-800 px-4 text-center">
-                <CheckCircle2 className="mb-2 h-8 w-8 text-emerald-500/70" />
-                <p className="text-sm font-medium text-slate-200">
+              <div className="flex h-52 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center">
+                <CheckCircle2 className="mb-2 h-8 w-8 text-emerald-500" />
+                <p className="text-sm font-semibold text-slate-800">
                   Tudo em dia por aqui
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
@@ -509,14 +515,14 @@ export function OverviewClient() {
 
       {/* Banner discreto de clínicas no teto da faixa (oportunidade de upgrade) */}
       {data && data.upgradeAlerts.length > 0 && (
-        <section className="flex flex-col gap-3 rounded-2xl border border-amber-500/25 bg-amber-950/10 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <section className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-2.5">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <div className="text-xs">
-              <span className="font-semibold text-amber-200">
+              <span className="font-semibold text-amber-900">
                 Potencial de Upgrade ({data.upgradeAlerts.length}):
               </span>{" "}
-              <span className="text-slate-300">
+              <span className="text-amber-800">
                 {data.upgradeAlerts
                   .map((u) => `${u.clinicName} (${u.alert.ratioLabel})`)
                   .join(" · ")}
@@ -525,7 +531,7 @@ export function OverviewClient() {
           </div>
           <Link
             href="/clinicas"
-            className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-amber-300 hover:text-amber-200"
+            className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-amber-800 hover:text-amber-950"
           >
             Revisar clínicas
             <ArrowUpRight className="h-3.5 w-3.5" />

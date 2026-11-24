@@ -159,27 +159,27 @@ export const CLINIC_STATUS_META: Record<
 > = {
   ACTIVE: {
     label: "Ativa",
-    badgeClass: "bg-emerald-500/12 text-emerald-300 border-emerald-500/25",
-    dotClass: "bg-emerald-400",
+    badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    dotClass: "bg-emerald-500",
   },
   ONBOARDING: {
     label: "Implantação",
-    badgeClass: "bg-sky-500/12 text-sky-300 border-sky-500/25",
-    dotClass: "bg-sky-400",
+    badgeClass: "bg-sky-50 text-sky-700 border-sky-200",
+    dotClass: "bg-sky-500",
   },
   DELINQUENT: {
     label: "Inadimplente",
-    badgeClass: "bg-rose-500/12 text-rose-300 border-rose-500/25",
-    dotClass: "bg-rose-400",
+    badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
+    dotClass: "bg-rose-500",
   },
   PAUSED: {
     label: "Pausada",
-    badgeClass: "bg-amber-500/12 text-amber-300 border-amber-500/25",
-    dotClass: "bg-amber-400",
+    badgeClass: "bg-amber-50 text-amber-800 border-amber-200",
+    dotClass: "bg-amber-500",
   },
   CANCELED: {
     label: "Cancelada",
-    badgeClass: "bg-slate-500/12 text-slate-400 border-slate-500/25",
+    badgeClass: "bg-slate-100 text-slate-600 border-slate-200",
     dotClass: "bg-slate-400",
   },
 };
@@ -225,8 +225,8 @@ export function computeInvoiceDisplayStatus(
       displayStatus: "PAID",
       daysDiff,
       label: "Pago",
-      badgeClass: "bg-emerald-500/12 text-emerald-300 border-emerald-500/25",
-      dotClass: "bg-emerald-400",
+      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      dotClass: "bg-emerald-500",
     };
   }
 
@@ -235,7 +235,7 @@ export function computeInvoiceDisplayStatus(
       displayStatus: "CANCELED",
       daysDiff,
       label: "Cancelado",
-      badgeClass: "bg-slate-500/12 text-slate-400 border-slate-500/25",
+      badgeClass: "bg-slate-100 text-slate-600 border-slate-200",
       dotClass: "bg-slate-400",
     };
   }
@@ -246,8 +246,8 @@ export function computeInvoiceDisplayStatus(
       displayStatus: "OVERDUE",
       daysDiff,
       label: overdueDays === 1 ? "Atrasado (1 dia)" : `Atrasado (${overdueDays} dias)`,
-      badgeClass: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-      dotClass: "bg-rose-400",
+      badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
+      dotClass: "bg-rose-500",
     };
   }
 
@@ -261,8 +261,8 @@ export function computeInvoiceDisplayStatus(
           : daysDiff === 1
             ? "Vence amanhã"
             : `Vence em ${daysDiff} dias`,
-      badgeClass: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-      dotClass: "bg-amber-400",
+      badgeClass: "bg-amber-50 text-amber-800 border-amber-200",
+      dotClass: "bg-amber-500",
     };
   }
 
@@ -270,7 +270,7 @@ export function computeInvoiceDisplayStatus(
     displayStatus: "OPEN",
     daysDiff,
     label: "Em Aberto",
-    badgeClass: "bg-sky-500/12 text-sky-300 border-sky-500/25",
-    dotClass: "bg-sky-400",
+    badgeClass: "bg-sky-50 text-sky-700 border-sky-200",
+    dotClass: "bg-sky-500",
   };
 }

@@ -38,8 +38,8 @@ function ExecutiveTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-slate-700/80 bg-[#0b111e]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-md">
-      <p className="mb-2 text-xs font-semibold tracking-wide text-slate-300 uppercase">
+    <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-lg">
+      <p className="mb-2 text-xs font-semibold tracking-wide text-slate-700 uppercase">
         {label}
       </p>
       <div className="space-y-1.5">
@@ -53,9 +53,9 @@ function ExecutiveTooltip({ active, payload, label }: CustomTooltipProps) {
                 className="h-2.5 w-2.5 rounded-sm"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-slate-300">{entry.name}</span>
+              <span className="text-slate-600">{entry.name}</span>
             </div>
-            <span className="font-mono-num font-semibold text-white">
+            <span className="font-mono-num font-semibold text-slate-900">
               {formatBRL(Math.round((entry.value ?? 0) * 100))}
             </span>
           </div>
@@ -77,14 +77,14 @@ export function RevenueProfitChart({ data }: { data: ChartPoint[] }) {
         >
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="rgba(148, 163, 184, 0.12)"
+            stroke="#e2e8f0"
             vertical={false}
           />
           <XAxis
             dataKey="label"
-            axisLine={false}
+            axisLine={{ stroke: "#e2e8f0" }}
             tickLine={false}
-            tick={{ fill: "#94a3b8", fontSize: 12 }}
+            tick={{ fill: "#475569", fontSize: 12 }}
             dy={6}
           />
           <YAxis
@@ -96,7 +96,7 @@ export function RevenueProfitChart({ data }: { data: ChartPoint[] }) {
           />
           <Tooltip
             content={<ExecutiveTooltip />}
-            cursor={{ fill: "rgba(148, 163, 184, 0.06)" }}
+            cursor={{ fill: "rgba(15, 23, 42, 0.04)" }}
           />
           <Legend
             verticalAlign="top"
@@ -104,26 +104,26 @@ export function RevenueProfitChart({ data }: { data: ChartPoint[] }) {
             height={34}
             iconType="circle"
             iconSize={8}
-            wrapperStyle={{ fontSize: "12px", color: "#cbd5e1" }}
+            wrapperStyle={{ fontSize: "12px", color: "#334155" }}
           />
           <Bar
             dataKey="received"
             name="Faturamento Recebido"
-            fill="#38bdf8"
+            fill="#0284c7"
             radius={[5, 5, 0, 0]}
             maxBarSize={26}
           />
           <Bar
             dataKey="costsAndTaxes"
             name="Custos + Impostos"
-            fill="#f59e0b"
+            fill="#d97706"
             radius={[5, 5, 0, 0]}
             maxBarSize={26}
           />
           <Bar
             dataKey="netProfit"
             name="Lucro Líquido"
-            fill="#10b981"
+            fill="#059669"
             radius={[5, 5, 0, 0]}
             maxBarSize={26}
           />

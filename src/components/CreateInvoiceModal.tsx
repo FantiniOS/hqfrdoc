@@ -68,7 +68,6 @@ export function CreateInvoiceModal({
     setAmountInput(first ? centsToReaisString(first.setupFeeCents) : "1800,00");
     setInstallments(1);
 
-    // Data padrão dentro da competência aberta
     const today = getTodaySaoPaulo();
     if (defaultCompetence === today.competence) {
       setDueDate(today.ymd);
@@ -177,18 +176,18 @@ export function CreateInvoiceModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-[#0f1623] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/12 text-emerald-400">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600">
               <Receipt className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="text-base font-semibold text-slate-900">
                 Novo Lançamento Avulso
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600">
                 Setup Inicial (1x a 3x) ou Serviços Opcionais
               </p>
             </div>
@@ -196,7 +195,7 @@ export function CreateInvoiceModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             aria-label="Fechar"
           >
             <X className="h-4 w-4" />
@@ -205,20 +204,20 @@ export function CreateInvoiceModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
           {clinics.length === 0 ? (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-800">
               Cadastre pelo menos uma clínica antes de criar lançamentos avulsos.
             </div>
           ) : (
             <>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-300">
+                <label className="mb-1 block text-xs font-medium text-slate-700">
                   Clínica *
                 </label>
                 <select
                   required
                   value={clinicId}
                   onChange={(e) => handleClinicChange(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-[#090d16] px-3 py-2 text-sm text-white outline-none focus:border-emerald-500/60"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 >
                   {clinics.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -229,13 +228,13 @@ export function CreateInvoiceModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-300">
+                <label className="mb-1 block text-xs font-medium text-slate-700">
                   Tipo de Cobrança *
                 </label>
                 <select
                   value={type}
                   onChange={(e) => handleTypeChange(e.target.value as InvoiceType)}
-                  className="w-full rounded-xl border border-slate-800 bg-[#090d16] px-3 py-2 text-sm text-white outline-none focus:border-emerald-500/60"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 >
                   {SERVICE_TYPES.map((t) => (
                     <option key={t} value={t}>
@@ -246,7 +245,7 @@ export function CreateInvoiceModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-300">
+                <label className="mb-1 block text-xs font-medium text-slate-700">
                   Descrição
                 </label>
                 <input
@@ -255,13 +254,13 @@ export function CreateInvoiceModal({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Ex.: Setup Inicial, Migração de prontuários..."
-                  className="w-full rounded-xl border border-slate-800 bg-[#090d16] px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-500/60"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-300">
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
                     Valor Total (R$) *
                   </label>
                   <input
@@ -270,12 +269,12 @@ export function CreateInvoiceModal({
                     value={amountInput}
                     onChange={(e) => setAmountInput(e.target.value)}
                     placeholder="1800,00"
-                    className="w-full rounded-xl border border-slate-800 bg-[#090d16] px-3 py-2 font-mono-num text-sm text-emerald-300 outline-none focus:border-emerald-500/60"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono-num text-sm font-semibold text-emerald-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-300">
+                  <label className="mb-1 block text-xs font-medium text-slate-700">
                     {type === "SETUP" && installments > 1
                       ? "Vencimento da 1ª Parcela *"
                       : "Data de Vencimento *"}
@@ -285,7 +284,7 @@ export function CreateInvoiceModal({
                     required
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#090d16] px-3 py-2 text-sm text-white outline-none focus:border-emerald-500/60"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                   />
                 </div>
               </div>
@@ -293,7 +292,7 @@ export function CreateInvoiceModal({
               {/* Parcelamento de Setup */}
               {type === "SETUP" && (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">
+                  <label className="mb-1.5 block text-xs font-medium text-slate-700">
                     Parcelamento do Setup
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -302,10 +301,10 @@ export function CreateInvoiceModal({
                         key={n}
                         type="button"
                         onClick={() => setInstallments(n)}
-                        className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
+                        className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                           installments === n
-                            ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
-                            : "border-slate-800 bg-[#090d16] text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                            ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
                         }`}
                       >
                         {n === 1 ? "1x (À vista)" : `${n}x mensais`}
@@ -314,18 +313,18 @@ export function CreateInvoiceModal({
                   </div>
 
                   {installmentPreview.length > 0 && (
-                    <div className="mt-2.5 rounded-xl border border-slate-800/80 bg-[#090d16] p-3">
-                      <p className="mb-1.5 text-[11px] font-medium text-slate-400">
+                    <div className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <p className="mb-1.5 text-[11px] font-medium text-slate-600">
                         Parcelas que serão geradas automaticamente:
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {installmentPreview.map((p) => (
                           <span
                             key={p.num}
-                            className="rounded-lg border border-slate-800 bg-[#0f1623] px-2.5 py-1 font-mono-num text-[11px] text-slate-200"
+                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-mono-num text-[11px] text-slate-700"
                           >
                             {p.num}/{installments} ({p.label}):{" "}
-                            <strong className="text-emerald-300">
+                            <strong className="text-emerald-700">
                               {formatBRL(p.cents)}
                             </strong>
                           </span>
@@ -339,7 +338,7 @@ export function CreateInvoiceModal({
           )}
 
           {error && (
-            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-300">
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700">
               {error}
             </div>
           )}
@@ -348,14 +347,14 @@ export function CreateInvoiceModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-slate-800 px-4 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving || clinics.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700 disabled:opacity-50"
             >
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Lançar Fatura

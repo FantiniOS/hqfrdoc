@@ -118,10 +118,10 @@ export function ClinicsClient() {
       {/* Topo */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-white">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
             Clínicas Clientes
           </h1>
-          <p className="mt-0.5 text-sm text-slate-400">
+          <p className="mt-0.5 text-sm text-slate-600">
             Carteira ativa, faixas FRdoc 2.0, reajustes IPCA e custo real de nuvem.
           </p>
         </div>
@@ -132,7 +132,7 @@ export function ClinicsClient() {
             setEditingClinic(null);
             setModalOpen(true);
           }}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-emerald-700"
         >
           <Plus className="h-4 w-4" />
           Nova Clínica
@@ -141,42 +141,50 @@ export function ClinicsClient() {
 
       {/* Resumo compacto */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-800/80 bg-[#0f1623] px-4 py-3">
-          <p className="text-[11px] font-medium text-slate-400 uppercase">Total na Carteira</p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-white">
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase">
+            Total na Carteira
+          </p>
+          <p className="mt-1 font-mono-num text-lg font-semibold text-slate-900">
             {metrics.total}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-800/80 bg-[#0f1623] px-4 py-3">
-          <p className="text-[11px] font-medium text-slate-400 uppercase">Clínicas Ativas</p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-emerald-400">
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase">
+            Clínicas Ativas
+          </p>
+          <p className="mt-1 font-mono-num text-lg font-semibold text-emerald-600">
             {metrics.activeCount}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-800/80 bg-[#0f1623] px-4 py-3">
-          <p className="text-[11px] font-medium text-slate-400 uppercase">MRR Contratado</p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-white">
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase">
+            MRR Contratado
+          </p>
+          <p className="mt-1 font-mono-num text-lg font-semibold text-slate-900">
             {formatBRL(metrics.mrrCents)}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-800/80 bg-[#0f1623] px-4 py-3">
-          <p className="text-[11px] font-medium text-slate-400 uppercase">Infra Mensal Total</p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-amber-300">
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase">
+            Infra Mensal Total
+          </p>
+          <p className="mt-1 font-mono-num text-lg font-semibold text-amber-700">
             {formatBRL(metrics.infraCents)}
           </p>
         </div>
       </div>
 
       {/* Busca e Filtros de Status */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-800/90 bg-[#0f1623] p-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar clínica, médico, CNPJ ou subdomínio..."
-            className="w-full rounded-xl border border-slate-800 bg-[#090d16] py-2 pr-3 pl-9 text-sm text-white placeholder-slate-500 outline-none transition focus:border-emerald-500/60"
+            className="w-full rounded-xl border border-slate-300 bg-white py-2 pr-3 pl-9 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
           />
         </div>
 
@@ -190,8 +198,8 @@ export function ClinicsClient() {
                 onClick={() => setStatusFilter(opt.value)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                   active
-                    ? "bg-slate-800 text-white ring-1 ring-slate-700"
-                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
+                    ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
                 {opt.label}
@@ -202,17 +210,17 @@ export function ClinicsClient() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-300">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700">
           {error}
         </div>
       )}
 
       {/* Tabela */}
-      <div className="overflow-hidden rounded-2xl border border-slate-800/90 bg-[#0f1623]">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-800/90 bg-[#0b111e] text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+              <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
                 <th className="px-4 py-3">Clínica / Subdomínio</th>
                 <th className="px-4 py-3">Responsável</th>
                 <th className="px-4 py-3">Plano & Médicos</th>
@@ -222,10 +230,13 @@ export function ClinicsClient() {
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/70">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                  <td
+                    colSpan={7}
+                    className="px-4 py-12 text-center text-sm text-slate-500"
+                  >
                     <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
                     Carregando carteira de clínicas...
                   </td>
@@ -233,8 +244,8 @@ export function ClinicsClient() {
               ) : filteredClinics.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-14 text-center">
-                    <Building2 className="mx-auto mb-2.5 h-8 w-8 text-slate-600" />
-                    <p className="text-sm font-medium text-slate-300">
+                    <Building2 className="mx-auto mb-2.5 h-8 w-8 text-slate-400" />
+                    <p className="text-sm font-semibold text-slate-800">
                       Nenhuma clínica encontrada
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
@@ -255,17 +266,17 @@ export function ClinicsClient() {
                   return (
                     <tr
                       key={clinic.id}
-                      className="transition hover:bg-slate-800/25"
+                      className="transition hover:bg-slate-50/80"
                     >
                       {/* Clínica & Subdomínio */}
                       <td className="px-4 py-3.5 align-top">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">
+                          <span className="font-semibold text-slate-900">
                             {clinic.name}
                           </span>
                           {clinic.isFounder && (
-                            <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/12 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
-                              <Sparkles className="h-2.5 w-2.5" />
+                            <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                              <Sparkles className="h-2.5 w-2.5 text-amber-600" />
                               Fundadora
                             </span>
                           )}
@@ -275,13 +286,13 @@ export function ClinicsClient() {
                             href={subdomainUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-1 inline-flex items-center gap-1 text-xs text-sky-400 transition hover:text-sky-300"
+                            className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-sky-600 transition hover:text-sky-700 hover:underline"
                           >
                             <span>{clinic.subdomain}</span>
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         ) : (
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-slate-400">
                             Subdomínio não definido
                           </p>
                         )}
@@ -289,10 +300,10 @@ export function ClinicsClient() {
 
                       {/* Responsável */}
                       <td className="px-4 py-3.5 align-top">
-                        <p className="text-sm text-slate-200">
+                        <p className="font-medium text-slate-800">
                           {clinic.responsibleName}
                         </p>
-                        <p className="mt-0.5 font-mono-num text-xs text-slate-400">
+                        <p className="mt-0.5 font-mono-num text-xs text-slate-600">
                           {clinic.whatsapp}
                         </p>
                       </td>
@@ -300,10 +311,10 @@ export function ClinicsClient() {
                       {/* Plano & Médicos + Alerta de Teto */}
                       <td className="px-4 py-3.5 align-top">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="rounded-md border border-slate-700/80 bg-slate-800/70 px-2 py-0.5 text-xs font-medium text-slate-200">
+                          <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
                             {tierMeta.label}
                           </span>
-                          <span className="font-mono-num text-xs text-slate-400">
+                          <span className="font-mono-num text-xs font-medium text-slate-600">
                             {clinic.activeDoctors}{" "}
                             {clinic.activeDoctors === 1 ? "médico" : "médicos"}
                           </span>
@@ -311,9 +322,9 @@ export function ClinicsClient() {
                         {ceilingAlert.show && clinic.status !== "CANCELED" && (
                           <div
                             title={ceilingAlert.message}
-                            className="mt-1.5 inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-300"
+                            className="mt-1.5 inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
                           >
-                            <AlertTriangle className="h-3 w-3 shrink-0" />
+                            <AlertTriangle className="h-3 w-3 shrink-0 text-amber-600" />
                             <span>
                               Teto {ceilingAlert.ratioLabel} · Upgrade{" "}
                               {ceilingAlert.nextTierLabel}
@@ -324,10 +335,10 @@ export function ClinicsClient() {
 
                       {/* Mensalidade */}
                       <td className="px-4 py-3.5 align-top">
-                        <p className="font-mono-num text-sm font-semibold text-emerald-400">
+                        <p className="font-mono-num text-sm font-semibold text-emerald-700">
                           {formatBRL(clinic.monthlyFeeCents)}
                         </p>
-                        <p className="mt-0.5 text-xs text-slate-400">
+                        <p className="mt-0.5 text-xs text-slate-500">
                           Venc. dia {String(clinic.dueDay).padStart(2, "0")}
                           {clinic.nextAdjustmentDate
                             ? ` · IPCA ${formatDateBR(clinic.nextAdjustmentDate)}`
@@ -337,15 +348,15 @@ export function ClinicsClient() {
 
                       {/* Infraestrutura */}
                       <td className="px-4 py-3.5 align-top">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300">
-                          <Server className="h-3.5 w-3.5 text-slate-500" />
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
+                          <Server className="h-3.5 w-3.5 text-slate-400" />
                           <span>{INFRA_TYPE_LABELS[clinic.infraType]}</span>
                         </div>
                         <p
-                          className={`mt-0.5 font-mono-num text-xs ${
+                          className={`mt-0.5 font-mono-num text-xs font-medium ${
                             clinic.infraCostCents === 0
-                              ? "text-emerald-400/90"
-                              : "text-amber-300"
+                              ? "text-emerald-700"
+                              : "text-amber-700"
                           }`}
                         >
                           {clinic.infraCostCents === 0
@@ -357,7 +368,7 @@ export function ClinicsClient() {
                       {/* Status */}
                       <td className="px-4 py-3.5 align-top">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusMeta.badgeClass}`}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.badgeClass}`}
                         >
                           <span
                             className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClass}`}
@@ -375,9 +386,9 @@ export function ClinicsClient() {
                               setEditingClinic(clinic);
                               setModalOpen(true);
                             }}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-[#090d16] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-700 hover:text-white"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Pencil className="h-3.5 w-3.5 text-slate-500" />
                             Editar
                           </button>
                           <button
@@ -385,7 +396,7 @@ export function ClinicsClient() {
                             onClick={() => void handleDelete(clinic)}
                             disabled={deletingId === clinic.id}
                             aria-label={`Excluir ${clinic.name}`}
-                            className="rounded-lg border border-slate-800 bg-[#090d16] p-1.5 text-slate-500 transition hover:border-rose-500/40 hover:text-rose-400 disabled:opacity-50"
+                            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
                           >
                             {deletingId === clinic.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />

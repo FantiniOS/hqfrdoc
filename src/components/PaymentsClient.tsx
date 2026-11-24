@@ -214,25 +214,25 @@ export function PaymentsClient() {
       key: "PAID",
       label: "Pago",
       count: counts?.paid ?? 0,
-      dot: "bg-emerald-400",
+      dot: "bg-emerald-500",
     },
     {
       key: "OPEN",
       label: "Em Aberto",
       count: counts?.open ?? 0,
-      dot: "bg-sky-400",
+      dot: "bg-sky-500",
     },
     {
       key: "DUE_SOON",
       label: "Vence em breve",
       count: counts?.dueSoon ?? 0,
-      dot: "bg-amber-400",
+      dot: "bg-amber-500",
     },
     {
       key: "OVERDUE",
       label: "Atrasado",
       count: counts?.overdue ?? 0,
-      dot: "bg-rose-400",
+      dot: "bg-rose-500",
     },
   ];
 
@@ -241,10 +241,10 @@ export function PaymentsClient() {
       {/* Cabeçalho e Ações Principais */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-white">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
             Pagamentos & Faturas
           </h1>
-          <p className="mt-0.5 text-sm text-slate-400">
+          <p className="mt-0.5 text-sm text-slate-600">
             Mensalidades recorrentes, setups parcelados, serviços opcionais e cobrança via WhatsApp.
           </p>
         </div>
@@ -256,7 +256,7 @@ export function PaymentsClient() {
             type="button"
             onClick={() => void handleGenerateMonthly()}
             disabled={generating}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/35 bg-emerald-500/12 px-3.5 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60"
           >
             {generating ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -269,7 +269,7 @@ export function PaymentsClient() {
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-semibold text-slate-950 transition hover:bg-emerald-400"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-700"
           >
             <Plus className="h-4 w-4" />
             Lançamento Avulso
@@ -280,17 +280,17 @@ export function PaymentsClient() {
       {/* Feedback Banner */}
       {feedback && (
         <div
-          className={`flex items-center justify-between rounded-xl border px-4 py-2.5 text-xs ${
+          className={`flex items-center justify-between rounded-xl border px-4 py-2.5 text-xs font-medium ${
             feedback.type === "success"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-              : "border-rose-500/30 bg-rose-500/10 text-rose-200"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-rose-200 bg-rose-50 text-rose-800"
           }`}
         >
           <span>{feedback.text}</span>
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="ml-4 text-[11px] opacity-70 hover:opacity-100"
+            className="ml-4 text-[11px] font-semibold opacity-75 hover:opacity-100"
           >
             Fechar
           </button>
@@ -299,43 +299,43 @@ export function PaymentsClient() {
 
       {/* Resumo da Competência */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-800/80 bg-[#0f1623] px-4 py-3">
-          <p className="text-[11px] font-medium text-slate-400 uppercase">
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase">
             Total Faturado
           </p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-white">
+          <p className="mt-1 font-mono-num text-lg font-semibold text-slate-900">
             {summary ? formatBRL(summary.totalCents) : "—"}
           </p>
         </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-[#0f1623] px-4 py-3">
-          <p className="text-[11px] font-medium text-slate-400 uppercase">
+        <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3 shadow-xs">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase">
             Recebido
           </p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-emerald-400">
+          <p className="mt-1 font-mono-num text-lg font-semibold text-emerald-600">
             {summary ? formatBRL(summary.paidCents) : "—"}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-800/80 bg-[#0f1623] px-4 py-3">
-          <p className="text-[11px] font-medium text-slate-400 uppercase">
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase">
             A Receber
           </p>
-          <p className="mt-1 font-mono-num text-lg font-semibold text-sky-300">
+          <p className="mt-1 font-mono-num text-lg font-semibold text-sky-700">
             {summary ? formatBRL(summary.openCents) : "—"}
           </p>
         </div>
         <div
-          className={`rounded-xl border px-4 py-3 ${
+          className={`rounded-xl border px-4 py-3 shadow-xs ${
             (summary?.overdueCents ?? 0) > 0
-              ? "border-rose-500/40 bg-rose-950/15"
-              : "border-slate-800/80 bg-[#0f1623]"
+              ? "border-rose-200 bg-rose-50/70"
+              : "border-slate-200 bg-white"
           }`}
         >
-          <p className="text-[11px] font-medium text-slate-400 uppercase">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase">
             Em Atraso
           </p>
           <p
             className={`mt-1 font-mono-num text-lg font-semibold ${
-              (summary?.overdueCents ?? 0) > 0 ? "text-rose-400" : "text-slate-300"
+              (summary?.overdueCents ?? 0) > 0 ? "text-rose-700" : "text-slate-700"
             }`}
           >
             {summary ? formatBRL(summary.overdueCents) : "—"}
@@ -344,7 +344,7 @@ export function PaymentsClient() {
       </div>
 
       {/* Filtros Semáforo */}
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-800/90 bg-[#0f1623] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
         {filterButtons.map((btn) => {
           const active = statusFilter === btn.key;
           return (
@@ -354,13 +354,19 @@ export function PaymentsClient() {
               onClick={() => setStatusFilter(btn.key)}
               className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                 active
-                  ? "bg-slate-800 text-white ring-1 ring-slate-700"
-                  : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
+                  ? "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
               {btn.dot && <span className={`h-2 w-2 rounded-full ${btn.dot}`} />}
               <span>{btn.label}</span>
-              <span className="rounded bg-slate-900/90 px-1.5 py-0.5 font-mono-num text-[10px] text-slate-400">
+              <span
+                className={`rounded px-1.5 py-0.5 font-mono-num text-[10px] font-semibold ${
+                  active
+                    ? "bg-white text-emerald-800"
+                    : "bg-slate-100 text-slate-600"
+                }`}
+              >
                 {btn.count}
               </span>
             </button>
@@ -369,11 +375,11 @@ export function PaymentsClient() {
       </div>
 
       {/* Tabela de Faturas */}
-      <div className="overflow-hidden rounded-2xl border border-slate-800/90 bg-[#0f1623]">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-800/90 bg-[#0b111e] text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+              <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold tracking-wider text-slate-600 uppercase">
                 <th className="px-4 py-3">Clínica</th>
                 <th className="px-4 py-3">Lançamento</th>
                 <th className="px-4 py-3">Vencimento</th>
@@ -382,10 +388,13 @@ export function PaymentsClient() {
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/70">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-12 text-center text-sm text-slate-500"
+                  >
                     <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
                     Carregando recebimentos...
                   </td>
@@ -393,8 +402,8 @@ export function PaymentsClient() {
               ) : !data || data.invoices.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-14 text-center">
-                    <Receipt className="mx-auto mb-2.5 h-8 w-8 text-slate-600" />
-                    <p className="text-sm font-medium text-slate-300">
+                    <Receipt className="mx-auto mb-2.5 h-8 w-8 text-slate-400" />
+                    <p className="text-sm font-semibold text-slate-800">
                       Nenhuma fatura nesta competência
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
@@ -428,28 +437,32 @@ export function PaymentsClient() {
                   return (
                     <tr
                       key={inv.id}
-                      className={`transition hover:bg-slate-800/25 ${
-                        isOverdue ? "bg-rose-950/10" : ""
+                      className={`transition hover:bg-slate-50/80 ${
+                        isOverdue ? "bg-rose-50/40" : ""
                       }`}
                     >
                       {/* Clínica */}
                       <td className="px-4 py-3.5 align-top">
-                        <p className="font-medium text-white">{inv.clinic.name}</p>
-                        <p className="mt-0.5 text-xs text-slate-400">
+                        <p className="font-semibold text-slate-900">
+                          {inv.clinic.name}
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-600">
                           {inv.clinic.responsibleName}
                         </p>
                       </td>
 
                       {/* Lançamento */}
                       <td className="px-4 py-3.5 align-top">
-                        <p className="text-sm text-slate-200">{inv.description}</p>
-                        <span className="mt-1 inline-block rounded border border-slate-800 bg-[#090d16] px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                        <p className="font-medium text-slate-800">
+                          {inv.description}
+                        </p>
+                        <span className="mt-1 inline-block rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
                           {INVOICE_TYPE_LABELS[inv.type]}
                         </span>
                       </td>
 
                       {/* Vencimento */}
-                      <td className="px-4 py-3.5 align-top font-mono-num text-xs text-slate-300">
+                      <td className="px-4 py-3.5 align-top font-mono-num text-xs font-medium text-slate-700">
                         {formatDateBR(inv.dueDate)}
                       </td>
 
@@ -457,7 +470,7 @@ export function PaymentsClient() {
                       <td className="px-4 py-3.5 align-top">
                         <span
                           className={`font-mono-num text-sm font-semibold ${
-                            isPaid ? "text-emerald-400" : "text-white"
+                            isPaid ? "text-emerald-700" : "text-slate-900"
                           }`}
                         >
                           {formatBRL(inv.amountCents)}
@@ -467,7 +480,7 @@ export function PaymentsClient() {
                       {/* Semáforo / Pagamento */}
                       <td className="px-4 py-3.5 align-top">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusMeta.badgeClass}`}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusMeta.badgeClass}`}
                         >
                           <span
                             className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClass}`}
@@ -475,7 +488,7 @@ export function PaymentsClient() {
                           {statusMeta.label}
                         </span>
                         {isPaid && (
-                          <p className="mt-1 text-[11px] text-slate-400">
+                          <p className="mt-1 text-[11px] text-slate-600">
                             {inv.paidAt ? formatDateBR(inv.paidAt) : ""}
                             {inv.paymentMethod
                               ? ` · ${PAYMENT_METHOD_LABELS[inv.paymentMethod]}`
@@ -501,7 +514,7 @@ export function PaymentsClient() {
                                     dueDate: inv.dueDate,
                                   })
                                 }
-                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/15 px-2.5 py-1.5 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/30 transition hover:bg-emerald-500/25"
+                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                                 Dar Baixa
@@ -512,10 +525,10 @@ export function PaymentsClient() {
                                   href={waUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium ring-1 transition ${
+                                  className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
                                     isOverdue
-                                      ? "bg-rose-500/15 text-rose-200 ring-rose-500/35 hover:bg-rose-500/25"
-                                      : "bg-slate-800/80 text-slate-200 ring-slate-700 hover:bg-slate-700"
+                                      ? "border-rose-300 bg-white text-rose-700 hover:bg-rose-50"
+                                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                                   }`}
                                 >
                                   <MessageCircle className="h-3.5 w-3.5" />
@@ -528,9 +541,9 @@ export function PaymentsClient() {
                               type="button"
                               onClick={() => void handleReopen(inv)}
                               disabled={busyId === inv.id}
-                              className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-[#090d16] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-700 hover:text-white disabled:opacity-50"
+                              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
                             >
-                              <RotateCcw className="h-3.5 w-3.5" />
+                              <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
                               Estornar
                             </button>
                           )}
@@ -540,7 +553,7 @@ export function PaymentsClient() {
                             onClick={() => void handleDelete(inv)}
                             disabled={busyId === inv.id}
                             aria-label="Excluir fatura"
-                            className="rounded-lg border border-slate-800 bg-[#090d16] p-1.5 text-slate-500 transition hover:border-rose-500/40 hover:text-rose-400 disabled:opacity-50"
+                            className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
                           >
                             {busyId === inv.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
