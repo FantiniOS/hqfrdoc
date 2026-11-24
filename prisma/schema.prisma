@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ClinicStatus {
+  ACTIVE
+  ONBOARDING
+  DELINQUENT
+  PAUSED
+  CANCELED
+}
+
+enum PlanTier {
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum InfraType {
+  ORACLE_ALWAYS_FREE
+  ORACLE_DEDICATED_VM
+  PAID_DEDICATED_DB
+}
+
+enum InvoiceType {
+  MONTHLY
+  SETUP
+  MIGRATION
+  EXTRA_TRAINING
+  PDF_CUSTOMIZATION
+  OTHER_SERVICE
+}
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+  CANCELED
+}
+
+enum PaymentMethod {
+  PIX
+  BOLETO
+  CARD
+  TRANSFER
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+model Clinic {
+  id                 String       @id @default(cuid())
+  name               String
+  cnpj               String?
+  responsibleName    String
+  whatsapp           String
+  email              String?
+  subdomain          String?      @unique
+  status             ClinicStatus @default(ONBOARDING)
+
+  activeDoctors      Int          @default(1)
+  planTier           PlanTier     @default(SMALL)
+  isFounder          Boolean      @default(false)
+  setupFeeCents      Int          @default(180000)
+  monthlyFeeCents    Int          @default(79000)
+  dueDay             Int          @default(10)
+  startDate          DateTime     @default(now())
+  nextAdjustmentDate DateTime?
+
+  infraType          InfraType    @default(ORACLE_ALWAYS_FREE)
+  infraCostCents     Int          @default(0)
+  technicalNotes     String?      @db.Text
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  invoices           Invoice[]
+
+  @@index([status])
+  @@index([planTier])
+  @@index([name])
+}
+
+model Invoice {
+  id                String         @id @default(cuid())
+  clinicId          String
+  clinic            Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  type              InvoiceType    @default(MONTHLY)
+  competence        String         // Formato YYYY-MM (ex.: 2026-11)
+  description       String
+  amountCents       Int
+  dueDate           DateTime
+  status            InvoiceStatus  @default(OPEN)
+
+  paidAt            DateTime?
+  paymentMethod     PaymentMethod?
+  receiptNote       String?
+  installmentNumber Int?
+  installmentTotal  Int?
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([clinicId, competence, type], name: "clinic_competence_type_unique")
+  @@index([competence])
+  @@index([dueDate])
+  @@index([status])
+  @@index([clinicId])
+}
+
+model FixedCost {
+  id                 String       @id @default(cuid())
+  name               String
+  category           String       @default("Infraestrutura")
+  monthlyAmountCents Int
+  billingCycle       BillingCycle @default(MONTHLY)
+  active             Boolean      @default(true)
+  notes              String?
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([active])
+}
+
+model HqSettings {
+  id             String   @id @default("default")
+  taxRatePercent Float    @default(6.0)
+  taxRegimeLabel String   @default("Simples Nacional — Anexo III")
+  pixKey         String   @default("")
+  pixKeyType     String   @default("CNPJ")
+  pixHolderName  String   @default("FRdoc")
+  companyName    String   @default("FRdoc")
+  updatedAt      DateTime @updatedAt
+}
